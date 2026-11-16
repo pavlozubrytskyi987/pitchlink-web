@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { Fragment, memo, useEffect, useRef, useState } from "react";
 import type { Creator } from "@/data/creators";
 import { subscribe } from "@/lib/ticker";
@@ -12,6 +13,8 @@ export type TileLive = {
   watchers: number;
   /** Change `id` to flash a new bid on the tile and count up to amountSol. */
   lastBid: { id: number; amountSol: number } | null;
+  /** Devnet tx signature of the latest on-chain bid; absent for seeded data. */
+  bidSignature?: string | null;
 };
 
 type Props = {
@@ -511,9 +514,23 @@ function CreatorTileImpl({
                 </span>
               </p>
             </div>
-            <span className="mt-2 flex h-[34px] items-center justify-center rounded-full bg-[#161616] text-[12px] font-semibold text-white transition-colors group-hover:bg-[#2a2a2a]">
+            {live.bidSignature ? (
+              <a
+                href={`https://explorer.solana.com/tx/${live.bidSignature}?cluster=devnet`}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => e.stopPropagation()}
+                className="mt-0.5 inline-flex items-center gap-1 text-[11px] font-medium text-[var(--accent-ink)] hover:underline"
+              >
+                view on Explorer ↗
+              </a>
+            ) : null}
+            <Link
+              href={`/creator/${creator.slug}`}
+              className="mt-2 flex h-[34px] items-center justify-center rounded-full bg-[#161616] text-[12px] font-semibold text-white transition-colors hover:bg-[#2a2a2a]"
+            >
               Place bid
-            </span>
+            </Link>
             <div className="mt-1.5 flex items-center gap-1.5 text-[11px] text-[#8d8d8d]">
               <span className="live-dot size-1.5 shrink-0 rounded-full bg-[var(--accent)]" />
               <span className="truncate">

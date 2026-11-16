@@ -4,7 +4,9 @@ import { useAnchorWallet, useConnection } from "@solana/wallet-adapter-react";
 import { PublicKey } from "@solana/web3.js";
 import { useCallback, useEffect, useState } from "react";
 import { useLogoDraft } from "@/components/logo-draft";
+import { pushRealBid } from "@/lib/bid-feed";
 import { loadBidLogo, saveBidLogo } from "@/lib/bid-logos";
+import { CREATORS, HERO_CREATOR_PUBKEY } from "@/data/creators";
 import {
   findAuction,
   getBids,
@@ -70,9 +72,16 @@ export function AuctionPanel() {
   }, [auctionKey, connection, refresh]);
 
   const remaining = auction && now !== null ? auction.endTs - now : null;
-  const ended = Boolean(auction && (auction.settled || (remaining !== null && remaining <= 0)));
-  const isCreator = Boolean(wallet && auction && wallet.publicKey.equals(auction.creator));
-  const winnerKey = auction && auction.highestBid > BigInt(0) ? auction.highestBidder.toBase58() : null;
+  const ended = Boolean(
+    auction && (auction.settled || (remaining !== null && remaining <= 0)),
+  );
+  const isCreator = Boolean(
+    wallet && auction && wallet.publicKey.equals(auction.creator),
+  );
+  const winnerKey =
+    auction && auction.highestBid > BigInt(0)
+      ? auction.highestBidder.toBase58()
+      : null;
 
   useEffect(() => {
     setSettled(Boolean(auction?.settled));
@@ -81,7 +90,8 @@ export function AuctionPanel() {
       return;
     }
     const mine = wallet?.publicKey.equals(auction.highestBidder) ?? false;
-    if (mine && draft) saveBidLogo(auction.publicKey.toBase58(), winnerKey, draft);
+    if (mine && draft)
+      saveBidLogo(auction.publicKey.toBase58(), winnerKey, draft);
     const stored = loadBidLogo(auction.publicKey.toBase58(), winnerKey);
     setWinner(auction.settled ? (stored ?? (mine ? draft : null)) : null);
   }, [auction, draft, setSettled, setWinner, wallet, winnerKey]);
@@ -118,8 +128,34 @@ export function AuctionPanel() {
         return;
       }
       const lamports = solToLamports(amount);
-      const signature = await placeBid(connection, wallet, auction.creator, lamports);
-      saveBidLogo(auction.publicKey.toBase58(), wallet.publicKey.toBase58(), draft);
+      const signature = await placeBid(
+        connection,
+        wallet,
+        auction.creator,
+        lamports,
+      );
+      saveBidLogo(
+        auction.publicKey.toBase58(),
+        wallet.publicKey.toBase58(),
+        draft,
+      );
+      const creatorKey = auction.creator.toBase58();
+      const matched =
+        CREATORS.find((c) => c.auctionCreatorPubkey === creatorKey) ??
+        (HERO_CREATOR_PUBKEY === creatorKey
+          ? CREATORS.find((c) => c.status === "live")
+          : null);
+      if (matched) {
+        pushRealBid({
+          id: `onchain-${signature}`,
+          bidder: shortKey(wallet.publicKey.toBase58()),
+          amountSol: Number(formatSol(lamports)),
+          creatorSlug: matched.slug,
+          creatorName: matched.name,
+          ts: Math.floor(Date.now() / 1000),
+          signature,
+        });
+      }
       setAmount("");
       setNotice(`Bid sent ${shortSig(signature)}`);
       await refresh();
@@ -135,7 +171,11 @@ export function AuctionPanel() {
     setBusy("settle");
     setNotice(null);
     try {
-      const signature = await settleAuction(connection, wallet, auction.creator);
+      const signature = await settleAuction(
+        connection,
+        wallet,
+        auction.creator,
+      );
       setNotice(`Settled ${shortSig(signature)}`);
       await refresh();
     } catch (error) {
@@ -149,7 +189,9 @@ export function AuctionPanel() {
     <aside className="flex h-full min-h-[560px] flex-col rounded-2xl border border-[#e6e4df] bg-[#f6f5f3] p-4">
       <div className="flex items-baseline justify-between gap-3">
         <h2 className="text-sm font-semibold text-[#1c1c1c]">Auction</h2>
-        <p className="text-xs text-[#8d8d8d]">{auction ? shortKey(auction.creator.toBase58()) : "Devnet"}</p>
+        <p className="text-xs text-[#8d8d8d]">
+          {auction ? shortKey(auction.creator.toBase58()) : "Devnet"}
+        </p>
       </div>
 
       {loading ? (
@@ -158,13 +200,21 @@ export function AuctionPanel() {
         <>
           <p className="mt-5 text-xs text-[#8d8d8d]">Highest bid</p>
           <p className="mt-1 text-3xl font-semibold tracking-tight text-[#1c1c1c]">
-            {auction.highestBid > BigInt(0) ? `${formatSol(auction.highestBid)} SOL` : "No bids"}
+            {auction.highestBid > BigInt(0)
+              ? `${formatSol(auction.highestBid)} SOL`
+              : "No bids"}
           </p>
           <p className="mt-3 text-sm text-[#1c1c1c]">
-            {auction.settled ? "Settled" : remaining === null ? "…" : formatRemaining(remaining)}
+            {auction.settled
+              ? "Settled"
+              : remaining === null
+                ? "…"
+                : formatRemaining(remaining)}
           </p>
           {auction.settled && winnerKey ? (
-            <p className="mt-1 text-sm text-[#1c1c1c]">Winner {shortKey(winnerKey)}</p>
+            <p className="mt-1 text-sm text-[#1c1c1c]">
+              Winner {shortKey(winnerKey)}
+            </p>
           ) : null}
 
           {ended && !auction.settled ? (
@@ -183,7 +233,11 @@ export function AuctionPanel() {
                   ? ` ${formatSol(auction.highestBid)} SOL goes to ${shortKey(auction.creator.toBase58())}.`
                   : " This closes the auction."}
               </p>
-              {!wallet ? <p className="mt-2 text-xs text-[#8d8d8d]">Connect a wallet to settle.</p> : null}
+              {!wallet ? (
+                <p className="mt-2 text-xs text-[#8d8d8d]">
+                  Connect a wallet to settle.
+                </p>
+              ) : null}
             </div>
           ) : null}
 
@@ -205,16 +259,33 @@ export function AuctionPanel() {
             />
             <button
               type="submit"
-              disabled={ended || !wallet || isCreator || busy !== null || amount.trim() === "" || !draft}
+              disabled={
+                ended ||
+                !wallet ||
+                isCreator ||
+                busy !== null ||
+                amount.trim() === "" ||
+                !draft
+              }
               className="h-11 rounded-xl bg-[#161616] px-4 text-sm font-semibold text-white disabled:bg-[#d9d7d3] disabled:text-[#8d8d8d]"
             >
               {busy === "bid" ? "Sending…" : "Place bid"}
             </button>
           </form>
-          {!wallet ? <p className="mt-2 text-xs text-[#8d8d8d]">Connect a wallet to bid.</p> : null}
-          {isCreator ? <p className="mt-2 text-xs text-[#8d8d8d]">The creator can’t bid on their own auction.</p> : null}
+          {!wallet ? (
+            <p className="mt-2 text-xs text-[#8d8d8d]">
+              Connect a wallet to bid.
+            </p>
+          ) : null}
+          {isCreator ? (
+            <p className="mt-2 text-xs text-[#8d8d8d]">
+              The creator can’t bid on their own auction.
+            </p>
+          ) : null}
           {wallet && !isCreator && !ended && !draft ? (
-            <p className="mt-2 text-xs text-[#8d8d8d]">Upload a logo on the shirt first. It stays if you win.</p>
+            <p className="mt-2 text-xs text-[#8d8d8d]">
+              Upload a logo on the shirt first. It stays if you win.
+            </p>
           ) : null}
 
           <div className="mt-5 min-h-0 flex-1 overflow-y-auto">
@@ -224,9 +295,16 @@ export function AuctionPanel() {
             ) : (
               <ul className="mt-2 divide-y divide-[#e6e4df]">
                 {bids.map((bid) => (
-                  <li key={bid.signature} className="flex items-baseline justify-between gap-3 py-2">
-                    <span className="text-sm text-[#1c1c1c]">{shortKey(bid.bidder.toBase58())}</span>
-                    <span className="text-sm font-medium text-[#1c1c1c]">{formatSol(bid.amount)} SOL</span>
+                  <li
+                    key={bid.signature}
+                    className="flex items-baseline justify-between gap-3 py-2"
+                  >
+                    <span className="text-sm text-[#1c1c1c]">
+                      {shortKey(bid.bidder.toBase58())}
+                    </span>
+                    <span className="text-sm font-medium text-[#1c1c1c]">
+                      {formatSol(bid.amount)} SOL
+                    </span>
                   </li>
                 ))}
               </ul>
@@ -256,11 +334,17 @@ export function AuctionPanel() {
           >
             {busy === "open" ? "Opening…" : "Open auction"}
           </button>
-          {!wallet ? <p className="mt-2 text-xs text-[#8d8d8d]">Connect a wallet to open it.</p> : null}
+          {!wallet ? (
+            <p className="mt-2 text-xs text-[#8d8d8d]">
+              Connect a wallet to open it.
+            </p>
+          ) : null}
         </div>
       )}
 
-      {notice ? <p className="mt-3 break-all text-xs text-[#8d8d8d]">{notice}</p> : null}
+      {notice ? (
+        <p className="mt-3 break-all text-xs text-[#8d8d8d]">{notice}</p>
+      ) : null}
     </aside>
   );
 }
@@ -304,7 +388,8 @@ function shortSig(value: string): string {
 }
 
 function errorText(error: unknown): string {
-  const message = error instanceof Error ? error.message : "Something went wrong";
+  const message =
+    error instanceof Error ? error.message : "Something went wrong";
   const line = message.split("\n")[0]?.trim() || "Something went wrong";
   return line.length > 160 ? `${line.slice(0, 157)}…` : line;
 }

@@ -15,6 +15,7 @@ import {
 import { BidTicker } from "@/components/bid-ticker";
 import { CreatorTile, type TileLive } from "@/components/creator-tile";
 import { CREATORS, type Creator } from "@/data/creators";
+import { subscribeFeed, type BidEntry } from "@/lib/bid-feed";
 import { observeInView, observeNear } from "@/lib/visibility";
 
 type SortKey = "hot" | "ending" | "bid";
@@ -95,20 +96,29 @@ const BoardTile = memo(function BoardTile({
     [base, override],
   );
 
+  const tile = (
+    <CreatorTile
+      creator={creator}
+      live={live}
+      mountVideo={near && !reducedMotion}
+      active={inView}
+      animate={!reducedMotion}
+    />
+  );
+  // Live hero renders its own inner Link (the Place bid button) and may show
+  // an <a> to Solana Explorer, so we don't wrap it in another <Link>.
   return (
     <div ref={ref} data-slug={creator.slug}>
-      <Link
-        href={`/creator/${creator.slug}`}
-        className="block rounded-[20px] outline-offset-2 focus-visible:outline-2 focus-visible:outline-[#1c1c1c]"
-      >
-        <CreatorTile
-          creator={creator}
-          live={live}
-          mountVideo={near && !reducedMotion}
-          active={inView}
-          animate={!reducedMotion}
-        />
-      </Link>
+      {creator.status === "live" ? (
+        tile
+      ) : (
+        <Link
+          href={`/creator/${creator.slug}`}
+          className="block rounded-[20px] outline-offset-2 focus-visible:outline-2 focus-visible:outline-[#1c1c1c]"
+        >
+          {tile}
+        </Link>
+      )}
     </div>
   );
 });
@@ -144,9 +154,28 @@ function WalletSlot() {
 export function LiveBoard({ creators = CREATORS, live }: Props) {
   const [sort, setSort] = useState<SortKey>("hot");
   const [seeded, setSeeded] = useState(() => seededLive(creators));
+  const [latestReal, setLatestReal] = useState<Record<string, BidEntry>>({});
   const reducedMotion = useReducedMotion();
   const gridRef = useRef<HTMLDivElement>(null);
   const flipFrom = useRef<Map<string, DOMRect> | null>(null);
+
+  // Promote the most recent on-chain bid per creator from the shared feed so
+  // the live tile can show its Explorer link.
+  useEffect(() => {
+    return subscribeFeed((entries) => {
+      const next: Record<string, BidEntry> = {};
+      for (const e of entries) {
+        if (e.signature && !next[e.creatorSlug]) next[e.creatorSlug] = e;
+      }
+      setLatestReal((prev) => {
+        const keys = new Set([...Object.keys(prev), ...Object.keys(next)]);
+        for (const k of keys) {
+          if (prev[k]?.id !== next[k]?.id) return next;
+        }
+        return prev;
+      });
+    });
+  }, []);
 
   // Seed the live auction's end time on the client only, so SSR and client
   // agree on the initial HTML (no hydration mismatch from Date.now()).
@@ -339,15 +368,31 @@ export function LiveBoard({ creators = CREATORS, live }: Props) {
           ref={gridRef}
           className="grid grid-cols-2 gap-2.5 sm:gap-4 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5"
         >
-          {sorted.map((creator) => (
-            <BoardTile
-              key={creator.slug}
-              creator={creator}
-              base={seeded[creator.slug]}
-              override={live?.[creator.slug]}
-              reducedMotion={reducedMotion}
-            />
-          ))}
+          {sorted.map((creator) => {
+            const real = latestReal[creator.slug];
+            const merged: Partial<TileLive> | undefined =
+              real || live?.[creator.slug]
+                ? {
+                    ...(real
+                      ? {
+                          currentBidSol: real.amountSol,
+                          bidSignature: real.signature,
+                          lastBid: { id: 0, amountSol: real.amountSol },
+                        }
+                      : null),
+                    ...live?.[creator.slug],
+                  }
+                : undefined;
+            return (
+              <BoardTile
+                key={creator.slug}
+                creator={creator}
+                base={seeded[creator.slug]}
+                override={merged}
+                reducedMotion={reducedMotion}
+              />
+            );
+          })}
         </div>
       </main>
     </div>

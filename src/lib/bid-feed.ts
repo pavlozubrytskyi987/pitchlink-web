@@ -44,6 +44,14 @@ export function getFeedSnapshot(): BidEntry[] {
   return entries;
 }
 
+/** Most recent on-chain bid (if any) for a creator slug. */
+export function latestRealBidFor(slug: string): BidEntry | null {
+  for (const e of entries) {
+    if (e.signature !== null && e.creatorSlug === slug) return e;
+  }
+  return null;
+}
+
 function prepend(entry: BidEntry) {
   entries = [entry, ...entries].slice(0, MAX_ENTRIES);
   emit();
@@ -57,6 +65,14 @@ export function pushRealBid(
   entry: Omit<BidEntry, "signature"> & { signature: string },
 ) {
   prepend(entry);
+}
+
+// Dev-only global so pushRealBid can be exercised from a devtools console
+// without a real wallet. No-op in production builds.
+if (typeof window !== "undefined" && process.env.NODE_ENV !== "production") {
+  (
+    window as unknown as { __pitchlinkPushRealBid?: typeof pushRealBid }
+  ).__pitchlinkPushRealBid = pushRealBid;
 }
 
 // --- seeded entries ---------------------------------------------------------
