@@ -5,7 +5,7 @@
 // Devnet pubkey of the wallet that created the Chef Dima auction.
 // (Auction PDA seeds = [b"auction", creator_pubkey].)
 export const HERO_CREATOR_PUBKEY: string | null =
-  "6S5KqyobKgyLeFdtQtJCnypXkKM6RaKAKTPzDKU3sA8C";
+  "HijGXNG2mLfq62rQrbWmJco3Sser37ad8xDdCbChFoPD";
 
 export type Creator = {
   slug: string;
