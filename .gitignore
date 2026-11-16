@@ -7,3 +7,7 @@ out/
 build/
 *.log
 .DS_Store
+
+# Jayanth clip/poster: local only until he gives permission
+public/creators/jayanth/
+tsconfig.tsbuildinfo
