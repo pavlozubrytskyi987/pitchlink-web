@@ -12,6 +12,7 @@ import {
   useState,
   useSyncExternalStore,
 } from "react";
+import { BidTicker } from "@/components/bid-ticker";
 import { CreatorTile, type TileLive } from "@/components/creator-tile";
 import { CREATORS, type Creator } from "@/data/creators";
 import { observeInView, observeNear } from "@/lib/visibility";
@@ -297,6 +298,7 @@ export function LiveBoard({ creators = CREATORS, live }: Props) {
             <WalletSlot />
           </div>
         </div>
+        <BidTicker />
       </header>
 
       <main className="mx-auto max-w-[1500px] px-4 pb-10 pt-4 sm:px-6">
