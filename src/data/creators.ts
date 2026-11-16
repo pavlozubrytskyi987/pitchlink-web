@@ -2,10 +2,10 @@
 // REAL on-chain pieces come from the Anchor program; social numbers are
 // seeded-from-real baselines, momentum animates forward from them.
 
-// TODO: set this to the devnet pubkey of the hero creator whose auction is
-// live on-chain. Until set, the hero tile falls back to "Opens soon" UI.
+// Devnet pubkey of the wallet that created the Chef Dima auction.
 // (Auction PDA seeds = [b"auction", creator_pubkey].)
-export const HERO_CREATOR_PUBKEY: string | null = null;
+export const HERO_CREATOR_PUBKEY: string | null =
+  "6S5KqyobKgyLeFdtQtJCnypXkKM6RaKAKTPzDKU3sA8C";
 
 export type Creator = {
   slug: string;
