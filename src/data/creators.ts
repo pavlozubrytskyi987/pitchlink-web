@@ -21,6 +21,7 @@ export type Creator = {
   trendPct: number;
   auctionCreatorPubkey: string | null;
   nextVideoAt: number; // unix seconds
+  status: "live" | "soon"; // hero tile is "live" and shows a real auction UI
 };
 
 // --- seeded momentum generator (deterministic) ---
@@ -261,6 +262,7 @@ export const CREATORS: Creator[] = SEEDS.map((s) => ({
   trendPct: 0,
   auctionCreatorPubkey: s.hero ? HERO_CREATOR_PUBKEY : null,
   nextVideoAt: NOW + s.daysUntilVideo * DAY + (s.momentumSeed % 19) * 1800,
+  status: s.hero ? "live" : "soon",
 }));
 
 for (const creator of CREATORS) creator.trendPct = trendFrom(creator.momentum);

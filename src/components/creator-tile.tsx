@@ -5,12 +5,12 @@ import type { Creator } from "@/data/creators";
 import { subscribe } from "@/lib/ticker";
 
 export type TileLive = {
-  /** Highest bid in SOL from the on-chain auction; null = no live auction. */
+  /** Highest bid in SOL from the on-chain auction; null = no bids yet. */
   currentBidSol: number | null;
-  /** Unix seconds the on-chain auction closes; null = no live auction. */
+  /** Unix seconds the on-chain auction closes; null falls back to nextVideoAt. */
   auctionEndsAt: number | null;
   watchers: number;
-  /** Change `id` to flash a new bid on the tile. */
+  /** Change `id` to flash a new bid on the tile and count up to amountSol. */
   lastBid: { id: number; amountSol: number } | null;
 };
 
@@ -233,9 +233,11 @@ function CreatorTileImpl({
   const odoRef = useRef<HTMLSpanElement>(null);
   const countdownRef = useRef<HTMLSpanElement>(null);
   const simRef = useRef<Sim | null>(null);
+  const bidRef = useRef<HTMLSpanElement>(null);
+  const bidDisplayedRef = useRef<number>(live.currentBidSol ?? 0);
   const [videoOn, setVideoOn] = useState(false);
 
-  const isLive = live.currentBidSol !== null && live.auctionEndsAt !== null;
+  const isLive = creator.status === "live";
   const countdownTarget = live.auctionEndsAt ?? creator.nextVideoAt;
   const endedLabel = isLive ? "Ended" : "Dropping";
   const initial = staticSpark(creator.momentum);
@@ -262,13 +264,27 @@ function CreatorTileImpl({
       const second = Math.floor(Date.now() / 1000);
       if (second !== lastSecond) {
         lastSecond = second;
-        if (countdownRef.current) {
-          countdownRef.current.textContent = formatCountdown(
-            countdownTarget - second,
-            endedLabel,
-          );
+        const remaining = countdownTarget - second;
+        const cd = countdownRef.current;
+        if (cd) {
+          cd.textContent = formatCountdown(remaining, endedLabel);
+          if (isLive)
+            cd.dataset.urgent = remaining > 0 && remaining < 3600 ? "1" : "";
         }
       }
+
+      // Ease the big bid number up to the live target.
+      if (bidRef.current && live.currentBidSol !== null) {
+        const target = live.currentBidSol;
+        const cur = bidDisplayedRef.current;
+        if (Math.abs(target - cur) > 0.0005) {
+          const k = 1 - Math.exp(-dt / 180);
+          const next = cur + (target - cur) * k;
+          bidDisplayedRef.current = next;
+          bidRef.current.textContent = formatSol(next);
+        }
+      }
+
       if (!animate) return;
 
       sim.frac += dt / STEP_MS;
@@ -306,7 +322,15 @@ function CreatorTileImpl({
         sim.impressionsPerMs * dt * (1 + 0.6 * Math.sin(sim.impressions / 37));
       writeOdometer(cols, sim.odoCache, sim.impressions);
     });
-  }, [active, animate, creator, countdownTarget, endedLabel]);
+  }, [
+    active,
+    animate,
+    creator,
+    countdownTarget,
+    endedLabel,
+    isLive,
+    live.currentBidSol,
+  ]);
 
   const gradientId = `spark-fill-${creator.slug}`;
 
@@ -349,10 +373,8 @@ function CreatorTileImpl({
         ) : null}
         <div className="flex items-center justify-between gap-2 p-2">
           {isLive ? (
-            <span
-              className={`${CHIP} flex items-center gap-1.5 tracking-[0.1em]`}
-            >
-              <span className="live-dot size-1.5 rounded-full bg-[#ff3b30]" />
+            <span className="live-badge flex items-center gap-1.5 rounded-full bg-[var(--accent)] px-2 py-1 text-[10px] font-semibold tracking-[0.12em] text-white shadow-[0_2px_10px_rgba(22,196,91,0.55)]">
+              <span className="live-dot size-1.5 rounded-full bg-white" />
               LIVE
             </span>
           ) : (
@@ -462,51 +484,77 @@ function CreatorTileImpl({
           </p>
         </div>
 
-        <div className="flex items-end justify-between gap-2 border-t border-[#e6e4df] pt-2">
-          <div className="min-w-0">
-            <p className={LABEL}>{isLive ? "Current bid" : "Auction"}</p>
-            <p className="truncate text-[12px] font-semibold tabular-nums sm:text-[13px]">
-              {isLive ? (
-                <>
-                  {formatSol(live.currentBidSol!)}{" "}
-                  <span className="text-[#8d8d8d]">SOL</span>
-                </>
-              ) : (
-                "Opens soon"
-              )}
-            </p>
-          </div>
-          <div className="shrink-0 text-right">
-            <p className={LABEL}>{isLive ? "Ends in" : "Next video"}</p>
-            <p
-              className={`text-[12px] font-semibold tabular-nums sm:text-[13px] ${isLive ? "text-[var(--accent-ink)]" : ""}`}
-            >
-              <span ref={countdownRef} suppressHydrationWarning>
-                --:--:--
-              </span>
-            </p>
-          </div>
-        </div>
-
-        <div className="relative h-4 overflow-hidden text-[11px] leading-4">
-          <p className="flex items-center gap-1.5 text-[#8d8d8d]">
-            <span className="live-dot size-1.5 shrink-0 rounded-full bg-[var(--accent)]" />
-            <span className="truncate">
-              <span className="tabular-nums text-[#1c1c1c]">
-                {live.watchers}
-              </span>{" "}
-              brands watching
+        {isLive ? (
+          <div className="rounded-[12px] border border-[var(--accent)]/30 bg-white/70 p-2 sm:p-2.5">
+            <div className="flex items-baseline justify-between gap-2">
+              <p className={LABEL}>Current bid</p>
+              <p className={LABEL}>Ends in</p>
+            </div>
+            <div className="mt-0.5 flex items-baseline justify-between gap-2">
+              <p
+                className={`text-[20px] font-semibold tabular-nums tracking-tight sm:text-[22px] ${live.lastBid ? "bid-pop" : ""}`}
+                key={live.lastBid?.id ?? "initial"}
+              >
+                <span ref={bidRef} suppressHydrationWarning>
+                  {formatSol(live.currentBidSol ?? 0)}
+                </span>{" "}
+                <span className="text-[13px] font-medium text-[#8d8d8d]">
+                  SOL
+                </span>
+              </p>
+              <p
+                className="text-[13px] font-semibold tabular-nums countdown-live"
+                data-urgent-color
+              >
+                <span ref={countdownRef} suppressHydrationWarning>
+                  --:--:--
+                </span>
+              </p>
+            </div>
+            <span className="mt-2 flex h-[34px] items-center justify-center rounded-full bg-[#161616] text-[12px] font-semibold text-white transition-colors group-hover:bg-[#2a2a2a]">
+              Place bid
             </span>
-          </p>
-          {live.lastBid ? (
-            <p
-              key={live.lastBid.id}
-              className="bid-flash absolute inset-0 truncate bg-[#f5f4f2] font-semibold text-[var(--accent-ink)]"
-            >
-              New bid · {formatSol(live.lastBid.amountSol)} SOL
-            </p>
-          ) : null}
-        </div>
+            <div className="mt-1.5 flex items-center gap-1.5 text-[11px] text-[#8d8d8d]">
+              <span className="live-dot size-1.5 shrink-0 rounded-full bg-[var(--accent)]" />
+              <span className="truncate">
+                <span className="tabular-nums text-[#1c1c1c]">
+                  {live.watchers}
+                </span>{" "}
+                brands watching
+              </span>
+            </div>
+          </div>
+        ) : (
+          <>
+            <div className="flex items-end justify-between gap-2 border-t border-[#e6e4df] pt-2">
+              <div className="min-w-0">
+                <p className={LABEL}>Auction</p>
+                <p className="truncate text-[12px] font-semibold tabular-nums sm:text-[13px]">
+                  Opens soon
+                </p>
+              </div>
+              <div className="shrink-0 text-right">
+                <p className={LABEL}>Next video</p>
+                <p className="text-[12px] font-semibold tabular-nums sm:text-[13px]">
+                  <span ref={countdownRef} suppressHydrationWarning>
+                    --:--:--
+                  </span>
+                </p>
+              </div>
+            </div>
+            <div className="relative h-4 overflow-hidden text-[11px] leading-4">
+              <p className="flex items-center gap-1.5 text-[#8d8d8d]">
+                <span className="live-dot size-1.5 shrink-0 rounded-full bg-[var(--accent)]" />
+                <span className="truncate">
+                  <span className="tabular-nums text-[#1c1c1c]">
+                    {live.watchers}
+                  </span>{" "}
+                  brands watching
+                </span>
+              </p>
+            </div>
+          </>
+        )}
       </div>
     </article>
   );
