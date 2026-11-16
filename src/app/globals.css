@@ -1,0 +1,42 @@
+@import "tailwindcss";
+
+html,
+body {
+  background: #ffffff;
+  color: #1c1c1c;
+}
+
+body {
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+.wallet-adapter-button {
+  height: 38px;
+  border-radius: 999px;
+  background: #161616;
+  color: #ffffff;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 560;
+  line-height: 38px;
+  padding: 0 16px;
+}
+
+.wallet-adapter-button:hover {
+  background: #2a2a2a;
+}
+
+.wallet-adapter-modal-wrapper {
+  background: #ffffff;
+  color: #1c1c1c;
+  border-radius: 16px;
+}
+
+.wallet-adapter-modal-title {
+  color: #1c1c1c;
+  font-weight: 600;
+}
+
+.wallet-adapter-modal-button-close {
+  background: #f3f2ef;
+}
