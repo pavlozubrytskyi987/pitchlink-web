@@ -35,17 +35,42 @@ function mulberry32(seed: number) {
   };
 }
 
-function seededMomentum(seed: number, start: number, endMult: number, points = 30): number[] {
+// Daily views shaped like a real account: compounding growth, a weekly rhythm,
+// day-to-day noise, and a spike on each post that decays over the next days.
+function seededMomentum(
+  seed: number,
+  start: number,
+  endMult: number,
+  points = 30,
+): number[] {
   const rnd = mulberry32(seed);
-  const end = start * endMult;
+  const postGap = 3 + Math.floor(rnd() * 4);
+  let nextPost = Math.floor(rnd() * postGap);
+  let noise = 0;
+  let spike = 0;
   const out: number[] = [];
   for (let i = 0; i < points; i++) {
-    const t = i / (points - 1);
-    const base = start + (end - start) * t;
-    const jitter = (rnd() - 0.4) * (end - start) * 0.08;
-    out.push(Math.max(1, Math.round(base + jitter)));
+    const base = start * Math.pow(endMult, i / (points - 1));
+    const weekly = 1 + 0.08 * Math.sin(((i + (seed % 7)) * 2 * Math.PI) / 7);
+    noise = noise * 0.7 + (rnd() - 0.5) * 0.16;
+    if (i === nextPost) {
+      spike += 0.25 + rnd() * rnd() * 1.4;
+      nextPost += Math.max(2, postGap + Math.floor(rnd() * 3) - 1);
+    }
+    out.push(
+      Math.max(1, Math.round(base * weekly * (1 + noise) * (1 + spike))),
+    );
+    spike *= 0.55;
   }
   return out;
+}
+
+// 30-day change: last week's average against the first week's.
+function trendFrom(series: number[]): number {
+  const mean = (xs: number[]) => xs.reduce((sum, x) => sum + x, 0) / xs.length;
+  return Math.round(
+    (mean(series.slice(-7)) / mean(series.slice(0, 7)) - 1) * 100,
+  );
 }
 
 // --- gradient poster data-URI (so it runs with no real assets yet) ---
@@ -86,7 +111,6 @@ type Seed = {
   momentumSeed: number;
   startViews: number;
   endMult: number;
-  trendPct: number;
   daysUntilVideo: number;
   hero?: boolean;
   hasPoster?: boolean; // public/creators/<slug>/poster.jpg exists
@@ -96,7 +120,7 @@ const SEEDS: Seed[] = [
   {
     // REAL-BUT-ENTERED, read by hand from instagram.com/jayanth.mov on
     // 2026-11-16: followers 7,369; totalImpressions = sum of views on his 12
-    // latest reels (top reel 2.8M). momentum + trendPct are seeded.
+    // latest reels (top reel 2.8M). momentum is seeded; trendPct is computed from it.
     // Clip = first 8s of his top reel (/reel/DaeeojNCCaX/), muted.
     slug: "jayanth",
     name: "Jayanth",
@@ -109,8 +133,7 @@ const SEEDS: Seed[] = [
     totalImpressions: 3_191_227,
     momentumSeed: 909,
     startViews: 9_000,
-    endMult: 2.6,
-    trendPct: 38,
+    endMult: 1.35,
     daysUntilVideo: 1,
     hasPoster: true,
   },
@@ -126,8 +149,7 @@ const SEEDS: Seed[] = [
     totalImpressions: 12_480_000,
     momentumSeed: 101,
     startViews: 18_000,
-    endMult: 3.1,
-    trendPct: 41,
+    endMult: 1.45,
     daysUntilVideo: 2,
     hero: true,
   },
@@ -143,8 +165,7 @@ const SEEDS: Seed[] = [
     totalImpressions: 6_210_000,
     momentumSeed: 202,
     startViews: 9_500,
-    endMult: 2.4,
-    trendPct: 28,
+    endMult: 1.2,
     daysUntilVideo: 4,
   },
   {
@@ -158,9 +179,8 @@ const SEEDS: Seed[] = [
     followers: 311_500,
     totalImpressions: 24_900_000,
     momentumSeed: 303,
-    startViews: 32_000,
-    endMult: 1.9,
-    trendPct: 17,
+    startViews: 61_000,
+    endMult: 0.88,
     daysUntilVideo: 1,
   },
   {
@@ -175,8 +195,7 @@ const SEEDS: Seed[] = [
     totalImpressions: 3_140_000,
     momentumSeed: 404,
     startViews: 6_200,
-    endMult: 3.8,
-    trendPct: 63,
+    endMult: 1.7,
     daysUntilVideo: 3,
   },
   {
@@ -191,8 +210,7 @@ const SEEDS: Seed[] = [
     totalImpressions: 8_720_000,
     momentumSeed: 505,
     startViews: 11_400,
-    endMult: 2.2,
-    trendPct: 22,
+    endMult: 1.15,
     daysUntilVideo: 5,
   },
   {
@@ -207,8 +225,7 @@ const SEEDS: Seed[] = [
     totalImpressions: 4_830_000,
     momentumSeed: 606,
     startViews: 8_100,
-    endMult: 2.7,
-    trendPct: 35,
+    endMult: 1.3,
     daysUntilVideo: 2,
   },
   {
@@ -223,8 +240,7 @@ const SEEDS: Seed[] = [
     totalImpressions: 2_410_000,
     momentumSeed: 707,
     startViews: 4_700,
-    endMult: 3.3,
-    trendPct: 51,
+    endMult: 1.5,
     daysUntilVideo: 6,
   },
 ];
@@ -242,7 +258,9 @@ export const CREATORS: Creator[] = SEEDS.map((s) => ({
   followers: s.followers,
   totalImpressions: s.totalImpressions,
   momentum: seededMomentum(s.momentumSeed, s.startViews, s.endMult),
-  trendPct: s.trendPct,
+  trendPct: 0,
   auctionCreatorPubkey: s.hero ? HERO_CREATOR_PUBKEY : null,
   nextVideoAt: NOW + s.daysUntilVideo * DAY + (s.momentumSeed % 19) * 1800,
 }));
+
+for (const creator of CREATORS) creator.trendPct = trendFrom(creator.momentum);

@@ -26,7 +26,7 @@ type Props = {
 };
 
 const SPARK_W = 100;
-const SPARK_H = 40;
+const SPARK_H = 46;
 const SPARK_PAD = 5;
 const STEP_MS = 1600;
 const ODO_UNIT_EM = 1.15;
@@ -34,7 +34,8 @@ const ODO_DIGITS = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0];
 
 function hashString(s: string): number {
   let h = 2166136261;
-  for (let i = 0; i < s.length; i++) h = Math.imul(h ^ s.charCodeAt(i), 16777619);
+  for (let i = 0; i < s.length; i++)
+    h = Math.imul(h ^ s.charCodeAt(i), 16777619);
   return h >>> 0;
 }
 
@@ -49,11 +50,18 @@ function mulberry32(seed: number) {
   };
 }
 
-function sparkPaths(v: number[], head: number, frac: number, lo: number, hi: number) {
+function sparkPaths(
+  v: number[],
+  head: number,
+  frac: number,
+  lo: number,
+  hi: number,
+) {
   const n = v.length - 1;
   const dx = SPARK_W / n;
   const span = hi - lo || 1;
-  const y = (val: number) => SPARK_PAD + (1 - (val - lo) / span) * (SPARK_H - SPARK_PAD * 2);
+  const y = (val: number) =>
+    SPARK_PAD + (1 - (val - lo) / span) * (SPARK_H - SPARK_PAD * 2);
   let line = "";
   for (let i = 0; i <= n; i++) {
     line += `${i ? "L" : "M"}${((i - frac) * dx).toFixed(2)},${y(v[i]).toFixed(2)}`;
@@ -84,6 +92,10 @@ type Sim = {
   impressionsPerMs: number;
   rnd: () => number;
   drift: number;
+  level: number;
+  noise: number;
+  spike: number;
+  headLabel: string;
   odoCache: number[];
 };
 
@@ -101,6 +113,10 @@ function createSim(creator: Creator): Sim {
     impressionsPerMs: v[v.length - 1] / 9000 / 1000,
     rnd,
     drift,
+    level: v[v.length - 1],
+    noise: 0,
+    spike: 0,
+    headLabel: "",
     odoCache: [],
   };
   sim.next = nextPoint(sim);
@@ -108,8 +124,13 @@ function createSim(creator: Creator): Sim {
 }
 
 function nextPoint(sim: Sim): number {
-  const lastValue = sim.v[sim.v.length - 1];
-  return lastValue * (1 + sim.drift + (sim.rnd() - 0.42) * 0.05);
+  // Same shape as the seeded history: drifting level, noise, decaying post spikes.
+  sim.level *= 1 + sim.drift;
+  sim.noise = sim.noise * 0.75 + (sim.rnd() - 0.5) * 0.12;
+  if (sim.rnd() < 0.07) sim.spike += 0.15 + sim.rnd() * 0.5;
+  const value = sim.level * (1 + sim.noise) * (1 + sim.spike);
+  sim.spike *= 0.6;
+  return value;
 }
 
 function writeOdometer(cols: HTMLElement[], cache: number[], value: number) {
@@ -121,7 +142,8 @@ function writeOdometer(cols: HTMLElement[], cache: number[], value: number) {
     const pos = Math.round((digit + roll) * 100) / 100;
     if (cache[k] !== pos) {
       cache[k] = pos;
-      cols[k].style.transform = `translate3d(0,${(-pos * ODO_UNIT_EM).toFixed(3)}em,0)`;
+      cols[k].style.transform =
+        `translate3d(0,${(-pos * ODO_UNIT_EM).toFixed(3)}em,0)`;
     }
   }
 }
@@ -137,14 +159,26 @@ function formatCountdown(seconds: number, endedLabel: string): string {
 }
 
 function formatSol(sol: number): string {
-  return sol.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 3 });
+  return sol.toLocaleString("en-US", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 3,
+  });
 }
 
 function compact(n: number): string {
-  return Intl.NumberFormat("en-US", { notation: "compact", maximumFractionDigits: 1 }).format(n);
+  return Intl.NumberFormat("en-US", {
+    notation: "compact",
+    maximumFractionDigits: 1,
+  }).format(n);
 }
 
-function Odometer({ value, rootRef }: { value: number; rootRef: React.Ref<HTMLSpanElement> }) {
+function Odometer({
+  value,
+  rootRef,
+}: {
+  value: number;
+  rootRef: React.Ref<HTMLSpanElement>;
+}) {
   const chars = Math.floor(value).toString().split("");
   return (
     <span
@@ -179,13 +213,21 @@ function Odometer({ value, rootRef }: { value: number; rootRef: React.Ref<HTMLSp
   );
 }
 
-const LABEL = "text-[9px] font-medium uppercase tracking-[0.14em] text-[#a09d96]";
-const CHIP = "rounded-full bg-white/90 px-2 py-1 text-[10px] font-semibold backdrop-blur-sm";
+const LABEL =
+  "text-[9px] font-medium uppercase tracking-[0.14em] text-[#a09d96]";
+const CHIP =
+  "rounded-full bg-white/90 px-2 py-1 text-[10px] font-semibold backdrop-blur-sm";
 
-function CreatorTileImpl({ creator, live, mountVideo = true, active = true, animate = true }: Props) {
+function CreatorTileImpl({
+  creator,
+  live,
+  mountVideo = true,
+  active = true,
+  animate = true,
+}: Props) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const lineRef = useRef<SVGPathElement>(null);
-  const glowRef = useRef<SVGPathElement>(null);
+  const headRef = useRef<HTMLSpanElement>(null);
   const areaRef = useRef<SVGPathElement>(null);
   const dotRef = useRef<HTMLSpanElement>(null);
   const odoRef = useRef<HTMLSpanElement>(null);
@@ -209,9 +251,11 @@ function CreatorTileImpl({ creator, live, mountVideo = true, active = true, anim
     if (!active) return;
     const sim = (simRef.current ??= createSim(creator));
     const cols: HTMLElement[] = [];
-    odoRef.current?.querySelectorAll<HTMLElement>("[data-place]").forEach((el) => {
-      cols[Number(el.dataset.place)] = el;
-    });
+    odoRef.current
+      ?.querySelectorAll<HTMLElement>("[data-place]")
+      .forEach((el) => {
+        cols[Number(el.dataset.place)] = el;
+      });
     let lastSecond = -1;
 
     return subscribe((dt) => {
@@ -219,7 +263,10 @@ function CreatorTileImpl({ creator, live, mountVideo = true, active = true, anim
       if (second !== lastSecond) {
         lastSecond = second;
         if (countdownRef.current) {
-          countdownRef.current.textContent = formatCountdown(countdownTarget - second, endedLabel);
+          countdownRef.current.textContent = formatCountdown(
+            countdownTarget - second,
+            endedLabel,
+          );
         }
       }
       if (!animate) return;
@@ -245,13 +292,18 @@ function CreatorTileImpl({ creator, live, mountVideo = true, active = true, anim
       sim.hi += (hi - sim.hi) * k;
       const paths = sparkPaths(sim.v, head, sim.frac, sim.lo, sim.hi);
       lineRef.current?.setAttribute("d", paths.line);
-      glowRef.current?.setAttribute("d", paths.line);
+      const headLabel = compact(head);
+      if (headLabel !== sim.headLabel && headRef.current) {
+        sim.headLabel = headLabel;
+        headRef.current.textContent = headLabel;
+      }
       areaRef.current?.setAttribute("d", paths.area);
       if (dotRef.current) {
         dotRef.current.style.transform = `translate3d(0,${paths.headY.toFixed(2)}px,0)`;
       }
 
-      sim.impressions += sim.impressionsPerMs * dt * (1 + 0.6 * Math.sin(sim.impressions / 37));
+      sim.impressions +=
+        sim.impressionsPerMs * dt * (1 + 0.6 * Math.sin(sim.impressions / 37));
       writeOdometer(cols, sim.odoCache, sim.impressions);
     });
   }, [active, animate, creator, countdownTarget, endedLabel]);
@@ -297,15 +349,21 @@ function CreatorTileImpl({ creator, live, mountVideo = true, active = true, anim
         ) : null}
         <div className="flex items-center justify-between gap-2 p-2">
           {isLive ? (
-            <span className={`${CHIP} flex items-center gap-1.5 tracking-[0.1em]`}>
+            <span
+              className={`${CHIP} flex items-center gap-1.5 tracking-[0.1em]`}
+            >
               <span className="live-dot size-1.5 rounded-full bg-[#ff3b30]" />
               LIVE
             </span>
           ) : (
-            <span className={`${CHIP} tracking-[0.1em] text-[#8d8d8d]`}>SOON</span>
+            <span className={`${CHIP} tracking-[0.1em] text-[#8d8d8d]`}>
+              SOON
+            </span>
           )}
-          <span className={`${CHIP} text-[11px] tabular-nums text-[var(--accent-ink)]`}>
-            ▲ {creator.trendPct}%
+          <span
+            className={`${CHIP} text-[11px] tabular-nums ${creator.trendPct < 0 ? "text-[#c4320a]" : "text-[var(--accent-ink)]"}`}
+          >
+            {creator.trendPct < 0 ? "▼" : "▲"} {Math.abs(creator.trendPct)}%
           </span>
         </div>
       </div>
@@ -313,56 +371,88 @@ function CreatorTileImpl({ creator, live, mountVideo = true, active = true, anim
       <div className="flex min-w-0 flex-col gap-2 px-1.5 pb-1.5 pt-2.5 sm:gap-2.5 sm:px-2 sm:pb-2">
         <div className="flex min-w-0 items-center gap-2">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={creator.avatarUrl} alt="" className="size-7 shrink-0 rounded-full sm:size-8" />
+          <img
+            src={creator.avatarUrl}
+            alt=""
+            className="size-7 shrink-0 rounded-full sm:size-8"
+          />
           <div className="min-w-0">
-            <p className="truncate text-[13px] font-semibold leading-tight sm:text-sm">{creator.name}</p>
+            <p className="truncate text-[13px] font-semibold leading-tight sm:text-sm">
+              {creator.name}
+            </p>
             <p className="truncate text-[11px] leading-tight text-[#8d8d8d]">
               {creator.niche} · {compact(creator.followers)} followers
             </p>
           </div>
         </div>
 
-        <div className={`relative ${animate ? "spark-reveal" : ""}`} style={{ height: SPARK_H }}>
-          <svg
-            viewBox={`0 0 ${SPARK_W} ${SPARK_H}`}
-            preserveAspectRatio="none"
-            aria-hidden
-            className="spark-svg block size-full overflow-hidden"
+        <div>
+          <div className="mb-1 flex items-baseline justify-between gap-2">
+            <p className={LABEL}>Views / day · 30d</p>
+            <p className="text-[11px] font-semibold tabular-nums">
+              <span ref={headRef} suppressHydrationWarning>
+                {compact(creator.momentum[creator.momentum.length - 1])}
+              </span>
+            </p>
+          </div>
+          <div
+            className={`relative ${animate ? "spark-reveal" : ""}`}
+            style={{ height: SPARK_H }}
           >
-            <defs>
-              <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0" stopColor="var(--accent)" stopOpacity="0.24" />
-                <stop offset="1" stopColor="var(--accent)" stopOpacity="0" />
-              </linearGradient>
-            </defs>
-            <path ref={areaRef} d={initial.area} fill={`url(#${gradientId})`} />
-            <path
-              ref={glowRef}
-              d={initial.line}
-              fill="none"
-              stroke="var(--accent)"
-              strokeOpacity="0.18"
-              strokeWidth="5"
-              strokeLinejoin="round"
-              vectorEffect="non-scaling-stroke"
+            <svg
+              viewBox={`0 0 ${SPARK_W} ${SPARK_H}`}
+              preserveAspectRatio="none"
+              aria-hidden
+              className="spark-svg block size-full overflow-hidden"
+            >
+              <defs>
+                <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
+                  <stop
+                    offset="0"
+                    stopColor="var(--accent)"
+                    stopOpacity="0.16"
+                  />
+                  <stop offset="1" stopColor="var(--accent)" stopOpacity="0" />
+                </linearGradient>
+              </defs>
+              {[1 / 3, 2 / 3].map((f) => (
+                <line
+                  key={f}
+                  x1="0"
+                  x2={SPARK_W}
+                  y1={SPARK_H * f}
+                  y2={SPARK_H * f}
+                  stroke="#1c1c1c"
+                  strokeOpacity="0.07"
+                  strokeDasharray="2 3"
+                  vectorEffect="non-scaling-stroke"
+                />
+              ))}
+              <path
+                ref={areaRef}
+                d={initial.area}
+                fill={`url(#${gradientId})`}
+              />
+              <path
+                ref={lineRef}
+                d={initial.line}
+                fill="none"
+                stroke="var(--accent)"
+                strokeWidth="1.75"
+                strokeLinejoin="round"
+                strokeLinecap="round"
+                vectorEffect="non-scaling-stroke"
+              />
+            </svg>
+            <span
+              ref={dotRef}
+              aria-hidden
+              className="spark-dot absolute right-0 top-0"
+              style={{
+                transform: `translate3d(0,${initial.headY.toFixed(2)}px,0)`,
+              }}
             />
-            <path
-              ref={lineRef}
-              d={initial.line}
-              fill="none"
-              stroke="var(--accent)"
-              strokeWidth="2"
-              strokeLinejoin="round"
-              strokeLinecap="round"
-              vectorEffect="non-scaling-stroke"
-            />
-          </svg>
-          <span
-            ref={dotRef}
-            aria-hidden
-            className="spark-dot absolute right-0 top-0"
-            style={{ transform: `translate3d(0,${initial.headY.toFixed(2)}px,0)` }}
-          />
+          </div>
         </div>
 
         <div>
@@ -378,7 +468,8 @@ function CreatorTileImpl({ creator, live, mountVideo = true, active = true, anim
             <p className="truncate text-[12px] font-semibold tabular-nums sm:text-[13px]">
               {isLive ? (
                 <>
-                  {formatSol(live.currentBidSol!)} <span className="text-[#8d8d8d]">SOL</span>
+                  {formatSol(live.currentBidSol!)}{" "}
+                  <span className="text-[#8d8d8d]">SOL</span>
                 </>
               ) : (
                 "Opens soon"
@@ -401,7 +492,10 @@ function CreatorTileImpl({ creator, live, mountVideo = true, active = true, anim
           <p className="flex items-center gap-1.5 text-[#8d8d8d]">
             <span className="live-dot size-1.5 shrink-0 rounded-full bg-[var(--accent)]" />
             <span className="truncate">
-              <span className="tabular-nums text-[#1c1c1c]">{live.watchers}</span> brands watching
+              <span className="tabular-nums text-[#1c1c1c]">
+                {live.watchers}
+              </span>{" "}
+              brands watching
             </span>
           </p>
           {live.lastBid ? (
