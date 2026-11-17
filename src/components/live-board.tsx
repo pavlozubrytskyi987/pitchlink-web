@@ -251,9 +251,7 @@ export function LiveBoard({ creators = CREATORS, live }: Props) {
     } else if (sort === "ending") {
       list.sort((a, b) => ends(a) - ends(b));
     } else {
-      list.sort(
-        (a, b) => bid(b) - bid(a) || b.totalImpressions - a.totalImpressions,
-      );
+      list.sort((a, b) => bid(b) - bid(a) || b.followers - a.followers);
     }
     return list;
   }, [creators, live, seeded, sort]);
@@ -337,8 +335,9 @@ export function LiveBoard({ creators = CREATORS, live }: Props) {
               Bid on a creator&rsquo;s next video
             </h1>
             <p className="mt-0.5 text-[13px] text-[#8d8d8d]">
-              Bids settle on Solana devnet. Audience numbers are seeded,
-              momentum is simulated.
+              Bids settle on Solana devnet. Follower counts are seeded,
+              momentum is simulated. Conversion data arrives once the
+              on-chain click counter lands.
             </p>
           </div>
           <div

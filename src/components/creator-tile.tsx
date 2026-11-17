@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Fragment, memo, useEffect, useRef, useState } from "react";
+import { memo, useEffect, useRef, useState } from "react";
 import type { Creator } from "@/data/creators";
 import { subscribe } from "@/lib/ticker";
 
@@ -89,16 +89,12 @@ type Sim = {
   frac: number;
   lo: number;
   hi: number;
-  impressions: number;
-  impressionsPerMs: number;
   rnd: () => number;
   drift: number;
   level: number;
   noise: number;
   spike: number;
   headLabel: string;
-  /** Last integer painted into the impression counter. */
-  odoShown: number;
 };
 
 function createSim(creator: Creator): Sim {
@@ -111,15 +107,12 @@ function createSim(creator: Creator): Sim {
     frac: rnd(),
     lo: Math.min(...v),
     hi: Math.max(...v),
-    impressions: creator.totalImpressions,
-    impressionsPerMs: v[v.length - 1] / 9000 / 1000,
     rnd,
     drift,
     level: v[v.length - 1],
     noise: 0,
     spike: 0,
     headLabel: "",
-    odoShown: Math.floor(creator.totalImpressions),
   };
   sim.next = nextPoint(sim);
   return sim;
@@ -133,31 +126,6 @@ function nextPoint(sim: Sim): number {
   const value = sim.level * (1 + sim.noise) * (1 + sim.spike);
   sim.spike *= 0.6;
   return value;
-}
-
-function writeOdometer(cols: HTMLElement[], sim: Sim, value: number) {
-  // Paint whole digits only. A sliding wheel sits under an overflow clip and
-  // the last column renders as a sliced glyph for the whole roll.
-  const target = Math.floor(value);
-  if (target === sim.odoShown) return;
-  sim.odoShown = target;
-  const odo = cols[0]?.closest<HTMLElement>(".odo");
-  if (odo) {
-    odo.setAttribute(
-      "aria-label",
-      `${target.toLocaleString("en-US")} impressions`,
-    );
-  }
-  for (let k = 0; k < cols.length; k++) {
-    const digit = Math.floor(target / 10 ** k) % 10;
-    const el = cols[k];
-    if (!el || el.dataset.digit === String(digit)) continue;
-    el.dataset.digit = String(digit);
-    el.textContent = String(digit);
-    el.classList.remove("odo-tick");
-    void el.offsetWidth;
-    el.classList.add("odo-tick");
-  }
 }
 
 function formatCountdown(seconds: number, endedLabel: string): string {
@@ -184,41 +152,6 @@ function compact(n: number): string {
   }).format(n);
 }
 
-function Odometer({
-  value,
-  rootRef,
-}: {
-  value: number;
-  rootRef: React.Ref<HTMLSpanElement>;
-}) {
-  const chars = Math.floor(value).toString().split("");
-  return (
-    <span
-      ref={rootRef}
-      role="img"
-      aria-label={`${Math.floor(value).toLocaleString("en-US")} impressions`}
-      className="odo"
-    >
-      {chars.map((ch, i) => {
-        const place = chars.length - 1 - i;
-        return (
-          <Fragment key={place}>
-            <span
-              className="odo-cell"
-              data-place={place}
-              data-digit={ch}
-              aria-hidden
-            >
-              {ch}
-            </span>
-            {place > 0 && place % 3 === 0 ? <span aria-hidden>,</span> : null}
-          </Fragment>
-        );
-      })}
-    </span>
-  );
-}
-
 const LABEL =
   "text-[9px] font-medium uppercase tracking-[0.14em] text-[#a09d96]";
 const CHIP =
@@ -236,7 +169,6 @@ function CreatorTileImpl({
   const headRef = useRef<HTMLSpanElement>(null);
   const areaRef = useRef<SVGPathElement>(null);
   const dotRef = useRef<HTMLSpanElement>(null);
-  const odoRef = useRef<HTMLSpanElement>(null);
   const countdownRef = useRef<HTMLSpanElement>(null);
   const simRef = useRef<Sim | null>(null);
   const bidRef = useRef<HTMLSpanElement>(null);
@@ -258,12 +190,6 @@ function CreatorTileImpl({
   useEffect(() => {
     if (!active) return;
     const sim = (simRef.current ??= createSim(creator));
-    const cols: HTMLElement[] = [];
-    odoRef.current
-      ?.querySelectorAll<HTMLElement>("[data-place]")
-      .forEach((el) => {
-        cols[Number(el.dataset.place)] = el;
-      });
     let lastSecond = -1;
 
     return subscribe((dt) => {
@@ -323,10 +249,6 @@ function CreatorTileImpl({
       if (dotRef.current) {
         dotRef.current.style.transform = `translate3d(0,${paths.headY.toFixed(2)}px,0)`;
       }
-
-      sim.impressions +=
-        sim.impressionsPerMs * dt * (1 + 0.6 * Math.sin(sim.impressions / 37));
-      writeOdometer(cols, sim, sim.impressions);
     });
   }, [
     active,
@@ -483,10 +405,19 @@ function CreatorTileImpl({
           </div>
         </div>
 
+        {/* Conversion slot: fills with real on-chain click-counter data.
+            Until then, a muted placeholder instead of invented numbers. */}
         <div>
-          <p className={LABEL}>Impressions</p>
-          <p className="mt-0.5 text-[17px] font-semibold leading-none tracking-normal sm:text-[19px]">
-            <Odometer value={creator.totalImpressions} rootRef={odoRef} />
+          <div className="flex items-baseline justify-between gap-2">
+            <p className={LABEL}>Conversion</p>
+            <p className="text-[9px] font-medium uppercase tracking-[0.14em] text-[#c4c1ba]">
+              no data yet
+            </p>
+          </div>
+          <p className="mt-0.5 text-[17px] font-semibold leading-none tracking-normal text-[#b3b0aa] sm:text-[19px]">
+            {creator.conversionPct !== null
+              ? `${creator.conversionPct.toFixed(1)}%`
+              : "—"}
           </p>
         </div>
 

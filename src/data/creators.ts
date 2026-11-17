@@ -1,6 +1,8 @@
 // Seeded creator data for the live board.
-// REAL on-chain pieces come from the Anchor program; social numbers are
-// seeded-from-real baselines, momentum animates forward from them.
+// REAL on-chain pieces come from the Anchor program; follower counts are
+// seeded baselines, momentum animates forward from them. No invented
+// performance metrics (impressions / CTR / conversions) live here —
+// `conversionPct` is the slot real on-chain click-counter data fills.
 
 // Devnet pubkey of the wallet that created the Chef Dima auction.
 // (Auction PDA seeds = [b"auction", creator_pubkey].)
@@ -16,7 +18,9 @@ export type Creator = {
   clipUrl: string;
   posterUrl: string;
   followers: number;
-  totalImpressions: number;
+  /** Slot for real conversion data from the on-chain click counter.
+      Null = no data yet; tiles render a muted "—" placeholder. */
+  conversionPct: number | null;
   momentum: number[]; // ~30 daily points
   trendPct: number;
   auctionCreatorPubkey: string | null;
@@ -108,7 +112,6 @@ type Seed = {
   avatarColor: string;
   initials: string;
   followers: number;
-  totalImpressions: number;
   momentumSeed: number;
   startViews: number;
   endMult: number;
@@ -120,8 +123,8 @@ type Seed = {
 const SEEDS: Seed[] = [
   {
     // REAL-BUT-ENTERED, read by hand from instagram.com/jayanth.mov on
-    // 2026-11-16: followers 7,369; totalImpressions = sum of views on his 12
-    // latest reels (top reel 2.8M). momentum is seeded; trendPct is computed from it.
+    // 2026-11-16: followers 7,369. momentum is seeded; trendPct is computed
+    // from it.
     // Clip = first 8s of his top reel (/reel/DaeeojNCCaX/), muted.
     slug: "jayanth",
     name: "Jayanth",
@@ -131,7 +134,6 @@ const SEEDS: Seed[] = [
     avatarColor: "#b91c1c",
     initials: "J",
     followers: 7_369,
-    totalImpressions: 3_191_227,
     momentumSeed: 909,
     startViews: 9_000,
     endMult: 1.35,
@@ -147,7 +149,6 @@ const SEEDS: Seed[] = [
     avatarColor: "#ea580c",
     initials: "CD",
     followers: 184_000,
-    totalImpressions: 12_480_000,
     momentumSeed: 101,
     startViews: 18_000,
     endMult: 1.45,
@@ -163,7 +164,6 @@ const SEEDS: Seed[] = [
     avatarColor: "#475569",
     initials: "NF",
     followers: 92_300,
-    totalImpressions: 6_210_000,
     momentumSeed: 202,
     startViews: 9_500,
     endMult: 1.2,
@@ -178,7 +178,6 @@ const SEEDS: Seed[] = [
     avatarColor: "#0ea5e9",
     initials: "ML",
     followers: 311_500,
-    totalImpressions: 24_900_000,
     momentumSeed: 303,
     startViews: 61_000,
     endMult: 0.88,
@@ -193,7 +192,6 @@ const SEEDS: Seed[] = [
     avatarColor: "#7c3aed",
     initials: "OL",
     followers: 57_800,
-    totalImpressions: 3_140_000,
     momentumSeed: 404,
     startViews: 6_200,
     endMult: 1.7,
@@ -208,7 +206,6 @@ const SEEDS: Seed[] = [
     avatarColor: "#65a30d",
     initials: "RT",
     followers: 128_000,
-    totalImpressions: 8_720_000,
     momentumSeed: 505,
     startViews: 11_400,
     endMult: 1.15,
@@ -223,7 +220,6 @@ const SEEDS: Seed[] = [
     avatarColor: "#db2777",
     initials: "KS",
     followers: 76_500,
-    totalImpressions: 4_830_000,
     momentumSeed: 606,
     startViews: 8_100,
     endMult: 1.3,
@@ -238,7 +234,6 @@ const SEEDS: Seed[] = [
     avatarColor: "#d97706",
     initials: "TW",
     followers: 44_200,
-    totalImpressions: 2_410_000,
     momentumSeed: 707,
     startViews: 4_700,
     endMult: 1.5,
@@ -257,7 +252,7 @@ export const CREATORS: Creator[] = SEEDS.map((s) => ({
     ? `/creators/${s.slug}/poster.jpg`
     : posterDataUri(s.g[0], s.g[1], s.niche.toUpperCase()),
   followers: s.followers,
-  totalImpressions: s.totalImpressions,
+  conversionPct: null, // no on-chain click data yet — placeholder renders
   momentum: seededMomentum(s.momentumSeed, s.startViews, s.endMult),
   trendPct: 0,
   auctionCreatorPubkey: s.hero ? HERO_CREATOR_PUBKEY : null,
