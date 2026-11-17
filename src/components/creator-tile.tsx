@@ -32,8 +32,6 @@ const SPARK_W = 100;
 const SPARK_H = 46;
 const SPARK_PAD = 5;
 const STEP_MS = 1600;
-const ODO_UNIT_EM = 1.15;
-const ODO_DIGITS = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0];
 
 function hashString(s: string): number {
   let h = 2166136261;
@@ -99,7 +97,8 @@ type Sim = {
   noise: number;
   spike: number;
   headLabel: string;
-  odoCache: number[];
+  /** Last integer painted into the impression counter. */
+  odoShown: number;
 };
 
 function createSim(creator: Creator): Sim {
@@ -120,7 +119,7 @@ function createSim(creator: Creator): Sim {
     noise: 0,
     spike: 0,
     headLabel: "",
-    odoCache: [],
+    odoShown: Math.floor(creator.totalImpressions),
   };
   sim.next = nextPoint(sim);
   return sim;
@@ -136,18 +135,28 @@ function nextPoint(sim: Sim): number {
   return value;
 }
 
-function writeOdometer(cols: HTMLElement[], cache: number[], value: number) {
+function writeOdometer(cols: HTMLElement[], sim: Sim, value: number) {
+  // Paint whole digits only. A sliding wheel sits under an overflow clip and
+  // the last column renders as a sliced glyph for the whole roll.
+  const target = Math.floor(value);
+  if (target === sim.odoShown) return;
+  sim.odoShown = target;
+  const odo = cols[0]?.closest<HTMLElement>(".odo");
+  if (odo) {
+    odo.setAttribute(
+      "aria-label",
+      `${target.toLocaleString("en-US")} impressions`,
+    );
+  }
   for (let k = 0; k < cols.length; k++) {
-    const p = 10 ** k;
-    const digit = Math.floor(value / p) % 10;
-    // A wheel only turns while the wheel to its right rolls from 9 to 0.
-    const roll = k === 0 ? value % 1 : Math.max(0, (value % p) - (p - 1));
-    const pos = Math.round((digit + roll) * 100) / 100;
-    if (cache[k] !== pos) {
-      cache[k] = pos;
-      cols[k].style.transform =
-        `translate3d(0,${(-pos * ODO_UNIT_EM).toFixed(3)}em,0)`;
-    }
+    const digit = Math.floor(target / 10 ** k) % 10;
+    const el = cols[k];
+    if (!el || el.dataset.digit === String(digit)) continue;
+    el.dataset.digit = String(digit);
+    el.textContent = String(digit);
+    el.classList.remove("odo-tick");
+    void el.offsetWidth;
+    el.classList.add("odo-tick");
   }
 }
 
@@ -194,19 +203,13 @@ function Odometer({
         const place = chars.length - 1 - i;
         return (
           <Fragment key={place}>
-            <span className="odo-window" aria-hidden>
-              <span
-                data-place={place}
-                className="odo-col"
-                style={{
-                  transform: `translate3d(0,${-Number(ch) * ODO_UNIT_EM}em,0)`,
-                  willChange: place < 3 ? "transform" : undefined,
-                }}
-              >
-                {ODO_DIGITS.map((d, j) => (
-                  <span key={j}>{d}</span>
-                ))}
-              </span>
+            <span
+              className="odo-cell"
+              data-place={place}
+              data-digit={ch}
+              aria-hidden
+            >
+              {ch}
             </span>
             {place > 0 && place % 3 === 0 ? <span aria-hidden>,</span> : null}
           </Fragment>
@@ -323,7 +326,7 @@ function CreatorTileImpl({
 
       sim.impressions +=
         sim.impressionsPerMs * dt * (1 + 0.6 * Math.sin(sim.impressions / 37));
-      writeOdometer(cols, sim.odoCache, sim.impressions);
+      writeOdometer(cols, sim, sim.impressions);
     });
   }, [
     active,
@@ -393,7 +396,7 @@ function CreatorTileImpl({
         </div>
       </div>
 
-      <div className="flex min-w-0 flex-col gap-2 px-1.5 pb-1.5 pt-2.5 sm:gap-2.5 sm:px-2 sm:pb-2">
+      <div className="flex min-w-0 flex-col gap-1.5 px-0.5 pb-1 pt-2 sm:gap-2 sm:px-1">
         <div className="flex min-w-0 items-center gap-2">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
@@ -482,7 +485,7 @@ function CreatorTileImpl({
 
         <div>
           <p className={LABEL}>Impressions</p>
-          <p className="mt-0.5 text-[17px] font-semibold tracking-tight sm:text-[19px]">
+          <p className="mt-0.5 text-[17px] font-semibold leading-none tracking-normal sm:text-[19px]">
             <Odometer value={creator.totalImpressions} rootRef={odoRef} />
           </p>
         </div>
