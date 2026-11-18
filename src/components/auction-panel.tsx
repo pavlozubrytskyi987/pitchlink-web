@@ -219,10 +219,10 @@ export function AuctionPanel() {
   const urgent = remaining !== null && remaining > 0 && remaining < 3600;
 
   return (
-    <aside className="flex h-full min-h-[480px] flex-col rounded-[20px] border border-line bg-raised p-4 sm:min-h-[560px]">
+    <aside className="flex h-full min-h-[480px] flex-col rounded-[14px] border border-hairline bg-paper p-5 sm:min-h-[560px]">
       <div className="flex items-center justify-between gap-3">
-        <div className="flex items-center gap-2">
-          <h2 className="text-[14px] font-semibold tracking-[-0.01em]">Auction</h2>
+        <div className="flex items-baseline gap-3">
+          <h2 className="font-serif text-[24px] leading-none tracking-[-0.015em]">Auction</h2>
           {status ? <StatusPill status={status} /> : null}
         </div>
         {auction ? (
@@ -231,43 +231,43 @@ export function AuctionPanel() {
             target="_blank"
             rel="noopener noreferrer"
             title="Auction account on Solana Explorer (devnet)"
-            className="group inline-flex h-7 items-center gap-1.5 rounded-full border border-line px-2.5 text-[11.5px] text-fg-3 transition-colors hover:border-line-strong hover:text-fg-2"
+            className="group inline-flex items-center gap-1.5 text-[12px] text-ash transition-colors hover:text-accent"
           >
-            <span className="font-mono text-fg-2 group-hover:text-fg">
+            <span className="font-mono text-graphite underline decoration-hairline-strong underline-offset-4 group-hover:text-accent group-hover:decoration-accent">
               {shortKey(auction.publicKey.toBase58())}
             </span>
-            <ExternalIcon className="size-3 group-hover:text-live-ink" />
+            <ExternalIcon className="size-3 group-hover:text-accent" />
           </a>
         ) : (
-          <span className="text-[12px] text-fg-3">Devnet</span>
+          <span className="text-[12px] text-ash">Devnet</span>
         )}
       </div>
 
       {loading ? (
         <div className="mt-5 space-y-2" aria-label="Loading the auction">
-          <div className="h-[104px] animate-pulse rounded-[14px] bg-panel" />
-          <div className="h-11 animate-pulse rounded-[12px] bg-panel" />
+          <div className="h-[104px] animate-pulse rounded-[14px] bg-wash" />
+          <div className="h-11 animate-pulse rounded-[12px] bg-wash" />
         </div>
       ) : auction ? (
         <>
-          <div className="mt-4 rounded-[14px] border border-line bg-panel p-3.5">
+          <div className="mt-6 border-t border-ink pt-3">
             <div className="flex items-baseline justify-between gap-2">
               <p className={LABEL}>Highest bid</p>
               <p className={LABEL}>{auction.settled ? "Status" : "Ends in"}</p>
             </div>
             <div className="mt-1.5 flex items-baseline justify-between gap-3">
-              <p className="text-[30px] font-semibold leading-none tracking-[-0.03em] tabular-nums">
+              <p className="font-serif text-[44px] leading-none tracking-[-0.025em]">
                 {auction.highestBid > BigInt(0) ? (
                   <>
                     {formatSol(auction.highestBid)}{" "}
-                    <span className="text-[14px] font-medium text-fg-3">SOL</span>
+                    <span className="font-sans text-[14px] tracking-normal text-graphite">SOL</span>
                   </>
                 ) : (
-                  <span className="text-fg-3">No bids</span>
+                  <span className="text-ash">No bids</span>
                 )}
               </p>
               <p
-                className={`font-mono text-[14px] tabular-nums ${urgent ? "text-alert" : auction.settled ? "text-live-ink" : "text-fg-2"}`}
+                className={`text-[16px] tabular-nums ${urgent ? "text-alert" : auction.settled ? "text-accent" : "text-ink"}`}
               >
                 {auction.settled
                   ? "Settled"
@@ -276,7 +276,7 @@ export function AuctionPanel() {
                     : formatRemaining(remaining)}
               </p>
             </div>
-            <dl className="mt-3 space-y-1.5 border-t border-line pt-2.5 text-[12px]">
+            <dl className="mt-4 divide-y divide-hairline border-y border-hairline text-[13px]">
               {winnerKey ? (
                 <Row label={auction.settled ? "Winner" : "Leading"}>
                   <AddressLink address={winnerKey} />
@@ -294,18 +294,18 @@ export function AuctionPanel() {
                 type="button"
                 onClick={() => void submitSettle()}
                 disabled={!wallet || busy !== null}
-                className="h-11 w-full rounded-[12px] bg-live text-[14px] font-semibold text-canvas transition-colors hover:bg-live-ink disabled:bg-panel-2 disabled:text-fg-3"
+                className="h-12 w-full rounded-full bg-ink text-[14px] font-medium text-paper transition-colors hover:bg-[#262626] disabled:bg-hairline disabled:text-ash"
               >
                 {busy === "settle" ? "Settling…" : "Settle & claim the slot"}
               </button>
-              <p className="mt-2 text-[12px] leading-snug text-fg-3">
+              <p className="mt-2 text-[12px] leading-snug text-ash">
                 Phantom pops up. Click Confirm.
                 {auction.highestBid > BigInt(0)
                   ? ` ${formatSol(auction.highestBid)} SOL goes to ${shortKey(auction.creator.toBase58())}.`
                   : " This closes the auction."}
               </p>
               {!wallet ? (
-                <p className="mt-1 text-[12px] text-fg-3">
+                <p className="mt-1 text-[12px] text-ash">
                   Connect a wallet to settle.
                 </p>
               ) : null}
@@ -332,9 +332,9 @@ export function AuctionPanel() {
                   placeholder="0.10"
                   aria-label="Bid in SOL"
                   disabled={ended || !wallet || isCreator}
-                  className="h-11 w-full rounded-[12px] border border-line bg-panel pl-3 pr-12 font-mono text-[15px] tabular-nums text-fg outline-none transition-colors placeholder:text-fg-3 focus:border-live/50 disabled:opacity-50"
+                  className="h-12 w-full rounded-[10px] border border-hairline-strong bg-paper pl-3.5 pr-12 text-[16px] text-ink outline-none transition-colors placeholder:text-ash focus:border-ink disabled:bg-wash disabled:opacity-60"
                 />
-                <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[12px] text-fg-3">
+                <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[12px] text-ash">
                   SOL
                 </span>
               </div>
@@ -348,19 +348,19 @@ export function AuctionPanel() {
                   amount.trim() === "" ||
                   !draft
                 }
-                className="h-11 shrink-0 rounded-[12px] bg-live px-4 text-[13.5px] font-semibold text-canvas transition-colors hover:bg-live-ink disabled:bg-panel-2 disabled:text-fg-3"
+                className="h-12 shrink-0 rounded-full bg-ink px-5 text-[14px] font-medium text-paper transition-colors hover:bg-[#262626] disabled:bg-hairline disabled:text-ash"
               >
                 {busy === "bid" ? "Sending…" : "Place bid"}
               </button>
             </div>
           </form>
-          <div className="mt-2 space-y-1 text-[12px] leading-snug text-fg-3">
+          <div className="mt-2 space-y-1 text-[12px] leading-snug text-ash">
             {!wallet ? <p>Connect a wallet to bid.</p> : null}
             {isCreator ? (
               <p>The creator can’t bid on their own auction.</p>
             ) : null}
             {wallet && !isCreator && !ended && !draft ? (
-              <p className="text-fg-2">
+              <p className="text-graphite">
                 Upload a logo on the shirt first. It stays if you win.
               </p>
             ) : null}
@@ -374,15 +374,15 @@ export function AuctionPanel() {
 
           <div className="mt-5 min-h-0 flex-1 overflow-y-auto">
             <div className="flex items-baseline justify-between">
-              <p className={LABEL}>Bids · on-chain</p>
+              <p className={LABEL}>Bids, verified on Solana</p>
               {bids.length ? (
-                <p className="text-[11px] tabular-nums text-fg-3">{bids.length}</p>
+                <p className="text-[11px] tabular-nums text-ash">{bids.length}</p>
               ) : null}
             </div>
             {bids.length === 0 ? (
-              <p className="mt-2 text-[13px] text-fg-3">No bids yet.</p>
+              <p className="mt-2 text-[13px] text-ash">No bids yet.</p>
             ) : (
-              <ul className="mt-1.5 divide-y divide-line">
+              <ul className="mt-1.5 divide-y divide-hairline">
                 {bids.map((bid, i) => (
                   <li key={bid.signature}>
                     <a
@@ -390,19 +390,19 @@ export function AuctionPanel() {
                       target="_blank"
                       rel="noopener noreferrer"
                       title="Open this bid on Solana Explorer"
-                      className="group -mx-2 flex items-center justify-between gap-3 rounded-[10px] px-2 py-2 transition-colors hover:bg-panel"
+                      className="group -mx-2 flex items-center justify-between gap-3 rounded-[8px] px-2 py-2.5 transition-colors hover:bg-wash"
                     >
                       <span className="flex min-w-0 items-center gap-2">
-                        <span className={`size-1.5 shrink-0 rounded-full ${i === 0 ? "bg-live" : "bg-fg-3/50"}`} />
-                        <span className="truncate font-mono text-[12.5px] text-fg-2">
+                        <span className={`size-[5px] shrink-0 rounded-full ${i === 0 ? "bg-accent" : "bg-hairline-strong"}`} />
+                        <span className="truncate font-mono text-[12.5px] text-graphite">
                           {shortKey(bid.bidder.toBase58())}
                         </span>
                       </span>
                       <span className="flex shrink-0 items-center gap-2">
-                        <span className="text-[13px] font-medium tabular-nums">
+                        <span className="text-[13.5px]">
                           {formatSol(bid.amount)} SOL
                         </span>
-                        <ExternalIcon className="size-3 text-fg-3 group-hover:text-live-ink" />
+                        <ExternalIcon className="size-3 text-ash group-hover:text-accent" />
                       </span>
                     </a>
                   </li>
@@ -413,8 +413,8 @@ export function AuctionPanel() {
         </>
       ) : (
         <div className="mt-5">
-          <p className="text-[14px] text-fg">No auction is open.</p>
-          <p className="mt-1 text-[12px] text-fg-3">
+          <p className="text-[14px] text-ink">No auction is open.</p>
+          <p className="mt-1 text-[12px] text-ash">
             Click Open auction. Phantom pops up. Click Confirm.
           </p>
           <label className={`mt-4 block ${LABEL}`}>
@@ -423,19 +423,19 @@ export function AuctionPanel() {
               value={minutes}
               onChange={(event) => setMinutes(event.target.value)}
               inputMode="numeric"
-              className="mt-1.5 h-11 w-full rounded-[12px] border border-line bg-panel px-3 font-mono text-[15px] normal-case tracking-normal text-fg outline-none focus:border-live/50"
+              className="mt-1.5 h-11 w-full rounded-[12px] border border-hairline bg-wash px-3 font-mono text-[15px] normal-case tracking-normal text-ink outline-none focus:border-accent/50"
             />
           </label>
           <button
             type="button"
             onClick={() => void openAuction()}
             disabled={!wallet || busy !== null}
-            className="mt-3 h-11 w-full rounded-[12px] bg-live text-[14px] font-semibold text-canvas transition-colors hover:bg-live-ink disabled:bg-panel-2 disabled:text-fg-3"
+            className="mt-3 h-12 w-full rounded-full bg-ink text-[14px] font-medium text-paper transition-colors hover:bg-[#262626] disabled:bg-hairline disabled:text-ash"
           >
             {busy === "open" ? "Opening…" : "Open auction"}
           </button>
           {!wallet ? (
-            <p className="mt-2 text-[12px] text-fg-3">
+            <p className="mt-2 text-[12px] text-ash">
               Connect a wallet to open it.
             </p>
           ) : null}
@@ -447,18 +447,18 @@ export function AuctionPanel() {
           href={explorerTx(lastTx.signature)}
           target="_blank"
           rel="noopener noreferrer"
-          className="group mt-3 flex items-center gap-2 rounded-[12px] border border-live/30 bg-live/[0.06] px-3 py-2 text-[12px] transition-colors hover:border-live/60"
+          className="group mt-3 flex items-center gap-2 border-t border-hairline pt-3 text-[13px] text-accent"
         >
-          <CheckIcon className="size-3.5 shrink-0 text-live-ink" />
-          <span className="font-medium text-fg">{lastTx.label}</span>
-          <span className="truncate font-mono text-fg-3 group-hover:text-fg-2">
+          <CheckIcon className="size-3.5 shrink-0 text-accent" />
+          <span>{lastTx.label}</span>
+          <span className="truncate font-mono text-[12px] underline decoration-accent/30 underline-offset-4 group-hover:decoration-accent">
             {shortSig(lastTx.signature)}
           </span>
-          <ExternalIcon className="ml-auto size-3 shrink-0 text-fg-3 group-hover:text-live-ink" />
+          <ExternalIcon className="ml-auto size-3 shrink-0 text-ash group-hover:text-accent" />
         </a>
       ) : null}
       {notice ? (
-        <p className="mt-3 break-words rounded-[12px] border border-line bg-panel px-3 py-2 text-[12px] text-fg-2">
+        <p className="mt-3 break-words border-t border-hairline pt-3 text-[13px] text-graphite">
           {notice}
         </p>
       ) : null}
@@ -466,31 +466,26 @@ export function AuctionPanel() {
   );
 }
 
-const LABEL = "text-[10px] font-medium uppercase tracking-[0.14em] text-fg-3";
+const LABEL = "text-[12.5px] text-graphite";
 
 function StatusPill({ status }: { status: "live" | "ended" | "settled" }) {
-  const look =
-    status === "live"
-      ? "bg-live text-canvas"
-      : status === "settled"
-        ? "border border-live/40 text-live-ink"
-        : "border border-line-strong text-fg-2";
+  const label = status === "live" ? "Live" : status === "settled" ? "Settled" : "Ended";
   return (
     <span
-      className={`flex items-center gap-1 rounded-full px-2 py-[3px] text-[9.5px] font-bold tracking-[0.12em] ${look}`}
+      className={`inline-flex items-center gap-1.5 text-[13px] ${status === "ended" ? "text-graphite" : "text-accent"}`}
     >
       {status === "live" ? (
-        <span className="live-dot size-1.5 rounded-full bg-canvas" />
+        <span className="live-dot size-[5px] rounded-full bg-accent" />
       ) : null}
-      {status.toUpperCase()}
+      {label}
     </span>
   );
 }
 
 function Row({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className="flex items-center justify-between gap-2">
-      <dt className="text-fg-3">{label}</dt>
+    <div className="flex items-center justify-between gap-2 py-2.5">
+      <dt className="text-graphite">{label}</dt>
       <dd>{children}</dd>
     </div>
   );
@@ -502,13 +497,14 @@ function AddressLink({ address }: { address: string }) {
       href={explorerAddress(address)}
       target="_blank"
       rel="noopener noreferrer"
-      className="group inline-flex items-center gap-1 font-mono text-fg-2 hover:text-fg"
+      className="group inline-flex items-center gap-1.5 font-mono text-[12.5px] text-ink underline decoration-hairline-strong underline-offset-4 hover:text-accent hover:decoration-accent"
     >
       {shortKey(address)}
-      <ExternalIcon className="size-3 text-fg-3 group-hover:text-live-ink" />
+      <ExternalIcon className="size-3 text-ash group-hover:text-accent" />
     </a>
   );
 }
+
 
 function formatSol(lamports: bigint): string {
   const negative = lamports < BigInt(0);

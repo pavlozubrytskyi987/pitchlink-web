@@ -10,7 +10,7 @@ import {
   subscribeFeed,
   type BidEntry,
 } from "@/lib/bid-feed";
-import { CheckIcon } from "@/components/icons";
+import { CheckIcon, ExternalIcon } from "@/components/icons";
 import { explorerTx, shortAddress } from "@/lib/explorer";
 import { subscribe as subscribeTicker } from "@/lib/ticker";
 
@@ -35,8 +35,8 @@ function formatSol(sol: number): string {
   });
 }
 
-const CHIP =
-  "flex shrink-0 items-center gap-2 rounded-full border px-2.5 py-1 text-[12px] leading-none";
+const ITEM =
+  "flex shrink-0 items-baseline gap-1.5 whitespace-nowrap px-5 text-[13px] leading-none";
 
 function RealChip({ entry, now }: { entry: BidEntry; now: number }) {
   const signature = entry.signature!;
@@ -45,26 +45,22 @@ function RealChip({ entry, now }: { entry: BidEntry; now: number }) {
       href={explorerTx(signature)}
       target="_blank"
       rel="noopener noreferrer"
-      title="Verified devnet transaction. Opens Solana Explorer."
-      className={`${CHIP} group/chip border-live/30 bg-live/[0.07] text-fg transition-colors hover:border-live/60 hover:bg-live/[0.12]`}
+      title="Verified on Solana devnet. Opens the transaction on Solana Explorer."
+      className={`${ITEM} group/chip text-ink`}
     >
-      <span className="flex items-center gap-1 rounded-full bg-live px-1.5 py-[3px] text-[9px] font-bold tracking-[0.1em] text-canvas">
-        <CheckIcon className="size-2.5" />
-        ON-CHAIN
-      </span>
-      <span className="font-mono text-[11px] text-fg-2">{entry.bidder}</span>
+      <CheckIcon className="size-3 shrink-0 translate-y-[1px] text-accent" />
+      <span className="font-mono text-[12px] text-graphite">{entry.bidder}</span>
       <span>
         bid{" "}
-        <span className="font-semibold tabular-nums">
+        <span className="font-medium">
           {formatSol(entry.amountSol)} SOL
         </span>{" "}
-        on <span className="font-semibold">{entry.creatorName}</span>
+        on {entry.creatorName}
       </span>
-      <span className="text-[11px] text-fg-3">
-        {formatAgo(Math.max(0, now - entry.ts))}
-      </span>
-      <span className="font-mono text-[11px] text-live-ink group-hover/chip:underline">
-        tx {shortAddress(signature)} ↗
+      <span className="text-ash">{formatAgo(Math.max(0, now - entry.ts))}</span>
+      <span className="inline-flex items-center gap-1 font-mono text-[12px] text-accent underline decoration-accent/30 underline-offset-4 group-hover/chip:decoration-accent">
+        {shortAddress(signature)}
+        <ExternalIcon className="size-3" />
       </span>
     </a>
   );
@@ -72,26 +68,19 @@ function RealChip({ entry, now }: { entry: BidEntry; now: number }) {
 
 function SimChip({ entry, now }: { entry: BidEntry; now: number }) {
   return (
-    <span
-      className={`${CHIP} border-line bg-raised text-fg-3`}
-      title="Simulated activity, not on-chain"
-    >
-      <span className="rounded-full border border-line-strong px-1.5 py-[2px] text-[8.5px] font-semibold tracking-[0.12em] text-fg-3">
-        SIM
-      </span>
-      <span className="font-mono text-[11px]">{entry.bidder}</span>
+    <span className={`${ITEM} text-ash`} title="Simulated activity, not on-chain">
+      <span className="text-[12px] italic">simulated</span>
+      <span className="font-mono text-[12px]">{entry.bidder}</span>
       <span>
         watching{" "}
         <Link
           href={`/creator/${entry.creatorSlug}`}
-          className="font-medium text-fg-2 underline-offset-2 hover:text-fg hover:underline"
+          className="text-graphite underline-offset-4 hover:text-ink hover:underline"
         >
           {entry.creatorName}
         </Link>
       </span>
-      <span className="text-[11px]">
-        {formatAgo(Math.max(0, now - entry.ts))}
-      </span>
+      <span>{formatAgo(Math.max(0, now - entry.ts))}</span>
     </span>
   );
 }
@@ -164,51 +153,48 @@ export function BidTicker() {
 
   return (
     <div
-      className="relative border-t border-line bg-canvas/60"
+      className="relative border-t border-hairline"
       onMouseEnter={() => (pausedRef.current = true)}
       onMouseLeave={() => (pausedRef.current = false)}
       onFocusCapture={() => (pausedRef.current = true)}
       onBlurCapture={() => (pausedRef.current = false)}
     >
-      <div className="mx-auto flex max-w-[1500px] items-center gap-3 px-4 py-1.5 sm:px-6">
-        <div className="flex shrink-0 items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-fg-3">
-          <span className="live-dot size-1.5 rounded-full bg-live" />
-          <span className="hidden sm:inline">Market</span>
-          <span className="sm:hidden">Live</span>
-        </div>
+      <div className="mx-auto flex h-10 max-w-[1320px] items-center px-5 sm:px-8">
+        <span className="shrink-0 pr-5 text-[13px] text-graphite">Market</span>
         {latestReal ? (
-          <div className="hidden shrink-0 items-center gap-2 border-r border-line pr-3 lg:flex">
-            <span className="text-[10px] font-medium uppercase tracking-[0.14em] text-fg-3">
-              Latest on-chain
-            </span>
+          <div className="hidden shrink-0 items-center border-l border-hairline lg:flex">
             <RealChip entry={latestReal} now={now} />
           </div>
         ) : null}
-        <div className="relative min-w-0 flex-1 overflow-hidden">
-          {/* edge fades */}
-          <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-10 bg-gradient-to-r from-canvas to-transparent" />
-          <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-10 bg-gradient-to-l from-canvas to-transparent" />
+        <div className="relative h-full min-w-0 flex-1 overflow-hidden border-l border-hairline">
+          <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-8 bg-gradient-to-r from-paper to-transparent" />
+          <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-12 bg-gradient-to-l from-paper to-transparent" />
           <div
             ref={trackRef}
-            className="flex items-center gap-2 will-change-transform"
+            className="flex h-full items-center will-change-transform"
             aria-label="Recent market activity"
           >
             {mounted && entries.length ? (
               <>
-                <div ref={copyRef} className="flex shrink-0 items-center gap-2 pr-2">
+                <div
+                  ref={copyRef}
+                  className="flex shrink-0 items-center divide-x divide-hairline"
+                >
                   {entries.map((e) => (
                     <Chip key={e.id} entry={e} now={now} />
                   ))}
                 </div>
-                <div className="flex shrink-0 items-center gap-2 pr-2" aria-hidden inert>
+                <div
+                  className="flex shrink-0 items-center divide-x divide-hairline border-l border-hairline"
+                  aria-hidden
+                  inert
+                >
                   {entries.map((e) => (
                     <Chip key={`dup-${e.id}`} entry={e} now={now} />
                   ))}
                 </div>
               </>
-            ) : (
-              <div className="h-[26px]" />
-            )}
+            ) : null}
           </div>
         </div>
       </div>

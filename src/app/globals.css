@@ -1,43 +1,37 @@
 @import "tailwindcss";
 
 /* ---- design tokens ------------------------------------------------------
-   One dark system for every page. Tailwind reads these as colors/fonts, so
-   `bg-raised`, `text-fg-2`, `border-line`, `text-live` etc. all exist. */
+   Auction-catalogue white. One accent (ultramarine) that only ever means
+   "verified on Solana" or "live". Everything else is ink on paper. */
 @theme {
-  --color-canvas: #07080a;
-  --color-raised: #0e1013;
-  --color-panel: #14171c;
-  --color-panel-2: #1b1f26;
-  --color-line: rgb(255 255 255 / 0.075);
-  --color-line-strong: rgb(255 255 255 / 0.14);
-  --color-fg: #eef0f3;
-  --color-fg-2: #a3a8b1;
-  --color-fg-3: #6c727c;
-  /* live / verified / conversion */
-  --color-live: #14f195;
-  --color-live-ink: #3df5a8;
-  /* chain proof (Solana purple) */
-  --color-chain: #a87bff;
-  --color-alert: #ff5d5d;
+  --color-paper: #ffffff;
+  --color-wash: #f4f4f3;
+  --color-ink: #000000;
+  --color-graphite: #565656;
+  --color-ash: #9a9a98;
+  --color-hairline: #e7e7e5;
+  --color-hairline-strong: #d2d2cf;
+  --color-accent: #1336c9;
+  --color-alert: #c4161c;
 
+  --font-serif: var(--font-newsreader), "Iowan Old Style", Georgia, serif;
   --font-sans:
-    ui-sans-serif, system-ui, -apple-system, "SF Pro Text", "Segoe UI",
-    Roboto, sans-serif;
-  --font-mono:
-    ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
+    var(--font-schibsted), ui-sans-serif, system-ui, -apple-system,
+    "Segoe UI", sans-serif;
+  --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
 }
 
 :root {
-  color-scheme: dark;
+  color-scheme: light;
   /* Older components read these two directly. */
-  --accent: var(--color-live);
-  --accent-ink: var(--color-live-ink);
+  --accent: var(--color-accent);
+  --accent-ink: var(--color-accent);
 }
 
 html,
 body {
-  background: var(--color-canvas);
-  color: var(--color-fg);
+  background: var(--color-paper);
+  color: var(--color-ink);
 }
 
 body {
@@ -48,13 +42,12 @@ body {
 }
 
 ::selection {
-  background: rgb(20 241 149 / 0.3);
-  color: #fff;
+  background: rgb(19 54 201 / 0.14);
 }
 
 :focus-visible {
-  outline: 2px solid var(--color-live);
-  outline-offset: 2px;
+  outline: 2px solid var(--color-accent);
+  outline-offset: 3px;
 }
 
 /* ---- conversion slot ----------------------------------------------------
@@ -62,110 +55,71 @@ body {
    styled from here (unlayered, so it beats utility classes) so that line
    never has to change for visual reasons. */
 .conv-slot > div:first-child > p:first-child {
-  color: var(--color-live-ink);
-  font-size: 10px;
-  font-weight: 650;
-  letter-spacing: 0.14em;
+  color: var(--color-ink);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0;
+  text-transform: none;
 }
 .conv-slot > div:first-child > p:last-child {
-  border: 1px solid var(--color-line-strong);
-  border-radius: 999px;
-  padding: 2px 6px;
+  color: var(--color-ash);
+  font-size: 12px;
+  font-weight: 400;
+  letter-spacing: 0;
+  text-transform: none;
   white-space: nowrap;
-  font-size: 8.5px;
-  line-height: 1.2;
-  color: var(--color-fg-3);
-}
-@media (max-width: 639px) {
-  /* Narrow two-column tiles: the dimmed placeholder already says "no data". */
-  .conv-slot > div:first-child > p:last-child {
-    display: none;
-  }
 }
 .conv-slot > p {
-  margin-top: 6px;
-  font-size: 30px;
-  font-weight: 650;
+  margin-top: 4px;
+  font-family: var(--font-serif);
+  font-size: 40px;
+  font-weight: 400;
   line-height: 1;
-  letter-spacing: -0.03em;
-  font-variant-numeric: tabular-nums;
-  color: var(--color-fg);
+  letter-spacing: -0.02em;
+  font-variant-numeric: lining-nums tabular-nums;
+  color: var(--color-ink);
 }
 .conv-slot[data-empty="true"] > p {
-  color: rgb(238 240 243 / 0.32);
+  color: #c9c9c6;
 }
-@media (min-width: 640px) {
+@media (max-width: 639px) {
   .conv-slot > p {
-    font-size: 34px;
+    font-size: 32px;
   }
 }
 
 /* ---- live board ---- */
 .spark-svg {
-  -webkit-mask-image: linear-gradient(to right, transparent, #000 14%);
-  mask-image: linear-gradient(to right, transparent, #000 14%);
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 12%);
+  mask-image: linear-gradient(to right, transparent, #000 12%);
 }
 .spark-dot {
-  width: 7px;
-  height: 7px;
-  margin: -3.5px -1px 0 0;
+  width: 5px;
+  height: 5px;
+  margin: -2.5px -0.5px 0 0;
   border-radius: 999px;
-  background: var(--accent);
-  box-shadow:
-    0 0 0 3px rgb(20 241 149 / 0.18),
-    0 0 10px 1px rgb(20 241 149 / 0.5);
+  background: var(--color-ink);
   will-change: transform;
-}
-.spark-reveal {
-  animation: spark-reveal 1.4s cubic-bezier(0.22, 1, 0.36, 1) both;
-}
-@keyframes spark-reveal {
-  from {
-    clip-path: inset(-10px 100% -10px 0);
-  }
-  to {
-    clip-path: inset(-10px -10px -10px 0);
-  }
 }
 
 .live-dot {
-  animation: live-pulse 1.8s ease-in-out infinite;
+  animation: live-pulse 2s ease-in-out infinite;
 }
 @keyframes live-pulse {
   50% {
-    opacity: 0.35;
-  }
-}
-
-.live-badge {
-  animation: live-badge-glow 2s ease-in-out infinite;
-}
-@keyframes live-badge-glow {
-  0%,
-  100% {
-    box-shadow: 0 0 12px rgb(20 241 149 / 0.35);
-  }
-  50% {
-    box-shadow:
-      0 0 18px rgb(20 241 149 / 0.6),
-      0 0 0 4px rgb(20 241 149 / 0.14);
+    opacity: 0.3;
   }
 }
 
 .bid-pop {
-  animation: bid-pop 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: bid-pop 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 @keyframes bid-pop {
-  0% {
-    transform: scale(1);
-    color: var(--accent-ink);
-  }
-  35% {
-    transform: scale(1.08);
-    color: var(--accent-ink);
+  0%,
+  40% {
+    color: var(--color-accent);
   }
   100% {
-    transform: scale(1);
     color: inherit;
   }
 }
@@ -174,47 +128,24 @@ body {
   color: var(--color-alert);
 }
 
-.bid-flash {
-  animation: bid-flash 3.4s cubic-bezier(0.22, 1, 0.36, 1) both;
-}
-@keyframes bid-flash {
-  0% {
-    transform: translateY(100%);
-  }
-  8%,
-  88% {
-    transform: translateY(0);
-  }
-  100% {
-    transform: translateY(-100%);
-  }
-}
 .tile-bid-ring {
-  animation: tile-bid-ring 1.6s ease-out both;
+  animation: tile-bid-ring 1.8s ease-out both;
 }
 @keyframes tile-bid-ring {
   0% {
-    box-shadow:
-      inset 0 0 0 1.5px var(--accent),
-      0 0 0 6px rgb(20 241 149 / 0.16);
+    box-shadow: inset 0 0 0 1.5px var(--color-accent);
   }
   100% {
-    box-shadow:
-      inset 0 0 0 1.5px transparent,
-      0 0 0 6px transparent;
+    box-shadow: inset 0 0 0 1.5px transparent;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .spark-reveal,
   .live-dot,
-  .live-badge,
-  .bid-flash,
   .bid-pop,
   .tile-bid-ring {
     animation: none;
   }
-  .bid-flash,
   .tile-bid-ring {
     display: none;
   }
@@ -222,19 +153,19 @@ body {
 
 /* ---- wallet adapter ---- */
 .wallet-adapter-button {
-  height: 36px;
+  height: 38px;
   border-radius: 999px;
-  background: var(--color-fg);
-  color: var(--color-canvas);
+  background: var(--color-ink);
+  color: var(--color-paper);
   font-family: inherit;
-  font-size: 13.5px;
-  font-weight: 600;
-  line-height: 36px;
-  padding: 0 14px;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 38px;
+  padding: 0 18px;
   transition: background-color 150ms ease;
 }
 .wallet-adapter-button:not([disabled]):hover {
-  background: #ffffff;
+  background: #262626;
 }
 .wallet-adapter-button-start-icon {
   width: 18px;
@@ -242,93 +173,110 @@ body {
   margin-right: 8px;
 }
 .wallet-adapter-dropdown-list {
-  background: var(--color-panel);
-  border: 1px solid var(--color-line-strong);
+  background: var(--color-paper);
+  border: 1px solid var(--color-hairline);
   border-radius: 14px;
+  box-shadow: 0 18px 40px -18px rgb(0 0 0 / 0.25);
+  color: var(--color-ink);
+}
+.wallet-adapter-dropdown-list-item {
+  color: var(--color-ink);
+  font-family: inherit;
+  font-weight: 500;
 }
 .wallet-adapter-dropdown-list-item:not([disabled]):hover {
-  background: var(--color-panel-2);
+  background: var(--color-wash);
+}
+.wallet-adapter-modal-overlay {
+  background: rgb(0 0 0 / 0.28);
 }
 .wallet-adapter-modal-wrapper {
-  background: var(--color-panel);
-  border: 1px solid var(--color-line-strong);
+  background: var(--color-paper);
+  color: var(--color-ink);
+  border: 1px solid var(--color-hairline);
   border-radius: 18px;
+  box-shadow: 0 30px 80px -30px rgb(0 0 0 / 0.35);
   font-family: inherit;
 }
 .wallet-adapter-modal-title {
-  color: var(--color-fg);
-  font-weight: 600;
+  color: var(--color-ink);
+  font-family: var(--font-serif);
+  font-weight: 400;
+  font-size: 26px;
 }
 .wallet-adapter-modal-button-close {
-  background: var(--color-panel-2);
+  background: var(--color-wash);
+}
+.wallet-adapter-modal-button-close svg {
+  fill: var(--color-graphite);
 }
 .wallet-adapter-modal-list .wallet-adapter-button {
   height: 52px;
   line-height: 52px;
   border-radius: 12px;
   background: transparent;
-  color: var(--color-fg);
+  color: var(--color-ink);
 }
 .wallet-adapter-modal-list .wallet-adapter-button:not([disabled]):hover {
-  background: var(--color-panel-2);
+  background: var(--color-wash);
+}
+.wallet-adapter-modal-list-more,
+.wallet-adapter-modal-middle-button {
+  color: var(--color-graphite);
 }
 
 /* ---- slot claimed reveal ------------------------------------------------
-   0.00s scrim dims the stage
-   0.15s SLOT CLAIMED stamps in
+   The one orchestrated moment.
+   0.00s stage softens
+   0.10s "Slot claimed" sets in, the rule under it draws
    0.55s winning logo flies in, shrinks onto the placement
-   1.25s lock ring pings as the 3D decal appears under it
-   1.50s settlement card + tracked link slide up                         */
+   1.25s lock ring as the 3D decal appears under it
+   1.50s settlement card + tracked link rise                              */
 .claim-scrim {
   background: radial-gradient(
     ellipse at 50% 45%,
-    rgb(7 8 10 / 0.15),
-    rgb(7 8 10 / 0.75) 75%
+    rgb(255 255 255 / 0) 30%,
+    rgb(255 255 255 / 0.85) 85%
   );
-  animation: claim-scrim 2.2s ease-out both;
+  animation: claim-fade 0.6s ease-out both;
 }
-@keyframes claim-scrim {
-  0% {
+@keyframes claim-fade {
+  from {
     opacity: 0;
-  }
-  18% {
-    opacity: 1;
-  }
-  100% {
-    opacity: 0.55;
   }
 }
 .claim-stamp {
-  animation: claim-stamp 0.6s 0.15s cubic-bezier(0.2, 0.9, 0.25, 1.25) both;
-  box-shadow:
-    0 0 0 1px rgb(20 241 149 / 0.15),
-    0 0 40px -6px rgb(20 241 149 / 0.55);
+  animation: claim-stamp 0.7s 0.1s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 @keyframes claim-stamp {
   from {
     opacity: 0;
-    transform: scale(1.5);
-    filter: blur(10px);
+    transform: translateY(6px);
+    filter: blur(6px);
   }
-  to {
-    opacity: 1;
-    transform: scale(1);
-    filter: blur(0);
+}
+.claim-rule {
+  transform-origin: left center;
+  animation: claim-rule 0.7s 0.35s cubic-bezier(0.65, 0, 0.35, 1) both;
+}
+@keyframes claim-rule {
+  from {
+    transform: scaleX(0);
   }
 }
 .claim-logo {
   transform: translate(-50%, -50%);
-  filter: drop-shadow(0 12px 30px rgb(0 0 0 / 0.6));
+  filter: drop-shadow(0 16px 30px rgb(0 0 0 / 0.18));
   animation: claim-logo 1.1s 0.5s cubic-bezier(0.65, 0, 0.35, 1) both;
 }
 @keyframes claim-logo {
   0% {
     opacity: 0;
-    transform: translate(-50%, -50%) scale(2.6);
+    transform: translate(-50%, -50%) scale(2.4);
   }
   25% {
     opacity: 1;
-    transform: translate(-50%, -50%) scale(2.1);
+    transform: translate(-50%, -50%) scale(2);
   }
   80% {
     opacity: 1;
@@ -346,27 +294,21 @@ body {
 }
 @keyframes claim-lock {
   0% {
-    opacity: 0.95;
-    transform: translate(-50%, -50%) scale(0.35);
-    box-shadow: 0 0 30px rgb(20 241 149 / 0.8);
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(0.4);
   }
   100% {
     opacity: 0;
-    transform: translate(-50%, -50%) scale(2.2);
-    box-shadow: 0 0 0 rgb(20 241 149 / 0);
+    transform: translate(-50%, -50%) scale(2);
   }
 }
 .claim-card {
-  animation: claim-fade-up 0.55s 1.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: claim-rise 0.6s 1.5s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
-@keyframes claim-fade-up {
+@keyframes claim-rise {
   from {
     opacity: 0;
-    transform: translateY(16px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
+    transform: translateY(14px);
   }
 }
 .claim-link {
@@ -384,7 +326,7 @@ body {
   background-image: linear-gradient(
     90deg,
     transparent,
-    rgb(255 255 255 / 0.06),
+    rgb(0 0 0 / 0.05),
     transparent
   );
   background-size: 200% 100%;
@@ -399,20 +341,18 @@ body {
   }
 }
 .claim-pill {
-  animation: claim-fade-up 0.3s ease-out both;
+  animation: claim-rise 0.3s ease-out both;
 }
 
 @media (prefers-reduced-motion: reduce) {
   .claim-scrim,
   .claim-stamp,
+  .claim-rule,
   .claim-card,
   .claim-link,
   .claim-shimmer,
   .claim-pill {
     animation: none;
-  }
-  .claim-scrim {
-    opacity: 0.55;
   }
   .claim-logo,
   .claim-lock {

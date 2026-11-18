@@ -8,12 +8,12 @@ import { ChainStatus } from "@/components/chain-status";
 
 export function SiteHeader({
   crumb,
-  detail,
+  children,
 }: {
-  /** Page name after "Pitchlink /". */
+  /** Page name shown after the wordmark. */
   crumb?: string;
-  /** Muted suffix, hidden on phones. */
-  detail?: string;
+  /** Rendered under the bar, inside the sticky header (the board's ticker). */
+  children?: React.ReactNode;
 }) {
   const { connected, disconnect } = useWallet();
   const [ready, setReady] = useState(false);
@@ -23,52 +23,54 @@ export function SiteHeader({
   }, []);
 
   return (
-    <header className="sticky top-0 z-20 border-b border-line bg-canvas/85 backdrop-blur-xl">
-      <div className="mx-auto flex max-w-[1500px] items-center justify-between gap-3 px-4 py-2.5 sm:px-6">
-        <nav className="flex min-w-0 items-center gap-2 text-[14px]" aria-label="Breadcrumb">
+    <header className="sticky top-0 z-20 border-b border-hairline bg-paper/92 backdrop-blur-xl">
+      <div className="mx-auto flex h-16 max-w-[1320px] items-center justify-between gap-4 px-5 sm:px-8">
+        <nav className="flex min-w-0 items-center gap-3" aria-label="Breadcrumb">
           <Link href="/" className="flex shrink-0 items-center gap-2">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/logo.png" alt="" width={24} height={24} className="size-6" />
-            <span className="text-[16px] font-semibold tracking-[-0.02em] text-fg">
+            <img
+              src="/logo.png"
+              alt=""
+              width={20}
+              height={20}
+              className="size-5 brightness-0"
+            />
+            <span className="font-serif text-[22px] leading-none tracking-[-0.02em]">
               Pitchlink
             </span>
           </Link>
           {crumb ? (
             <>
-              <span className="text-fg-3" aria-hidden>
-                /
-              </span>
-              <span className="truncate text-fg-2">
-                {crumb}
-                {detail ? (
-                  <span className="hidden text-fg-3 sm:inline"> · {detail}</span>
-                ) : null}
-              </span>
+              <span className="h-4 w-px bg-hairline-strong" aria-hidden />
+              <span className="truncate text-[14px] text-graphite">{crumb}</span>
             </>
           ) : null}
         </nav>
-        <div className="flex shrink-0 items-center gap-2">
+        <div className="flex shrink-0 items-center gap-5">
           <span className="hidden sm:block">
-            <ChainStatus compact />
+            <ChainStatus />
           </span>
-          {ready ? (
-            <>
-              <WalletMultiButton />
-              {connected ? (
-                <button
-                  type="button"
-                  onClick={() => void disconnect()}
-                  className="hidden h-9 rounded-full border border-line-strong px-3 text-[13px] text-fg-2 transition-colors hover:border-fg-3 hover:text-fg sm:block"
-                >
-                  Disconnect
-                </button>
-              ) : null}
-            </>
-          ) : (
-            <div className="h-9 w-[132px] rounded-full bg-fg/90" aria-hidden />
-          )}
+          <div className="flex items-center gap-2">
+            {ready ? (
+              <>
+                <WalletMultiButton />
+                {connected ? (
+                  <button
+                    type="button"
+                    onClick={() => void disconnect()}
+                    className="hidden h-[38px] rounded-full border border-hairline-strong px-4 text-[14px] text-graphite transition-colors hover:border-ink hover:text-ink sm:block"
+                  >
+                    Disconnect
+                  </button>
+                ) : null}
+              </>
+            ) : (
+              <div className="h-[38px] w-[136px] rounded-full bg-ink" aria-hidden />
+            )}
+          </div>
         </div>
       </div>
+      {children}
     </header>
   );
 }

@@ -1,7 +1,5 @@
 "use client";
 
-import { useWallet } from "@solana/wallet-adapter-react";
-import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 import Link from "next/link";
 import {
   memo,
@@ -15,7 +13,8 @@ import {
 import { BidTicker } from "@/components/bid-ticker";
 import { CreatorTile, type TileLive } from "@/components/creator-tile";
 import { CREATORS, type Creator } from "@/data/creators";
-import { ChainStatus, ProofLink } from "@/components/chain-status";
+import { ProofList } from "@/components/chain-status";
+import { SiteHeader } from "@/components/site-header";
 import { subscribeFeed, type BidEntry } from "@/lib/bid-feed";
 import { PROGRAM_ID } from "@/lib/config";
 import { useHeroAuction } from "@/lib/use-hero-auction";
@@ -116,7 +115,7 @@ const BoardTile = memo(function BoardTile({
       ) : (
         <Link
           href={`/creator/${creator.slug}`}
-          className="block rounded-[18px] outline-offset-2 focus-visible:outline-2 focus-visible:outline-live"
+          className="block rounded-[12px] outline-offset-4"
         >
           {tile}
         </Link>
@@ -124,34 +123,6 @@ const BoardTile = memo(function BoardTile({
     </div>
   );
 });
-
-function WalletSlot() {
-  const { connected, disconnect } = useWallet();
-  const [ready, setReady] = useState(false);
-  useEffect(() => setReady(true), []);
-
-  if (!ready)
-    return (
-      <div
-        className="h-9 w-[132px] rounded-full bg-fg/90"
-        aria-hidden
-      />
-    );
-  return (
-    <>
-      <WalletMultiButton />
-      {connected ? (
-        <button
-          type="button"
-          onClick={() => void disconnect()}
-          className="hidden h-9 rounded-full border border-line-strong px-3 text-[13px] text-fg-2 transition-colors hover:border-fg-3 hover:text-fg sm:block"
-        >
-          Disconnect
-        </button>
-      ) : null}
-    </>
-  );
-}
 
 export function LiveBoard({ creators = CREATORS, live }: Props) {
   const [sort, setSort] = useState<SortKey>("hot");
@@ -268,87 +239,52 @@ export function LiveBoard({ creators = CREATORS, live }: Props) {
     }
   }, [sorted]);
 
-  return (
-    <div className="min-h-screen bg-canvas text-fg">
-      <header className="sticky top-0 z-20 border-b border-line bg-canvas/85 backdrop-blur-xl">
-        <div className="mx-auto flex max-w-[1500px] items-center justify-between gap-3 px-4 py-2.5 sm:px-6">
-          <div className="flex min-w-0 items-center gap-3">
-            <Link href="/" className="flex shrink-0 items-center gap-2">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src="/logo.png"
-                alt=""
-                width={24}
-                height={24}
-                className="size-6"
-              />
-              <span className="text-[16px] font-semibold tracking-[-0.02em]">
-                Pitchlink
-              </span>
-            </Link>
-          </div>
-          <div className="flex shrink-0 items-center gap-2">
-            <span className="hidden sm:block">
-              <ChainStatus compact />
-            </span>
-            <WalletSlot />
-          </div>
-        </div>
-        <BidTicker />
-      </header>
+  const liveCount = creators.filter((c) => c.status === "live").length;
 
-      <main className="mx-auto max-w-[1500px] px-4 pb-12 sm:px-6">
-        <section className="grid gap-5 pb-6 pt-6 sm:pt-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,540px)] lg:items-end lg:gap-12 lg:pb-7">
+  return (
+    <div className="min-h-screen bg-paper text-ink">
+      <SiteHeader>
+        <BidTicker />
+      </SiteHeader>
+
+      <main className="mx-auto max-w-[1320px] px-5 pb-20 sm:px-8">
+        <section className="grid gap-10 pb-12 pt-12 sm:pt-16 md:grid-cols-[minmax(0,1fr)_300px] md:items-end md:gap-12 lg:grid-cols-[minmax(0,1fr)_340px] lg:gap-20 lg:pb-14">
           <div className="min-w-0">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-fg-3">
-              The on-chain market for creator attention
-            </p>
-            <h1 className="mt-2.5 max-w-[24ch] text-[30px] font-semibold leading-[1.06] tracking-[-0.035em] text-balance sm:text-[40px]">
-              Creator ad slots, priced by{" "}
-              <span className="text-live">on-chain conversion.</span>
+            <h1 className="max-w-[20ch] font-serif text-[42px] font-normal leading-[1.02] tracking-[-0.025em] text-balance sm:text-[64px]">
+              Creator ad slots, priced by real conversion.
             </h1>
-            <p className="mt-3 max-w-[74ch] text-[14px] leading-relaxed text-pretty text-fg-2 sm:text-[15px]">
+            <p className="mt-6 max-w-[58ch] text-[16px] leading-[1.6] text-graphite sm:text-[17px]">
               Brands bid SOL for a slot in a small creator&rsquo;s next video.
               The winner gets a tracked link, and every click through it is
-              recorded on Solana, so creators are priced on results, not
+              recorded on Solana, so creators earn on results instead of
               follower count.
             </p>
-            <div className="mt-4 flex flex-wrap items-center gap-2">
-              <ChainStatus />
-              <ProofLink label="Program" address={PROGRAM_ID} />
-              {heroChain ? (
-                <ProofLink label="Live auction" address={heroChain.address} />
-              ) : null}
-            </div>
           </div>
-          <HowItWorks />
+          <ProofList programId={PROGRAM_ID} auctionAddress={heroChain?.address ?? null} />
         </section>
 
-        <div className="mb-3 flex flex-wrap items-center justify-between gap-3 border-t border-line pt-4">
-          <div className="flex min-w-0 items-baseline gap-2.5">
-            <h2 className="text-[15px] font-semibold tracking-[-0.01em]">
-              Next videos up for auction
+        <HowItWorks />
+
+        <div className="mt-16 flex flex-wrap items-end justify-between gap-x-6 gap-y-3 border-b border-hairline pb-4 sm:mt-20">
+          <div className="flex min-w-0 items-baseline gap-3">
+            <h2 className="font-serif text-[30px] font-normal leading-none tracking-[-0.02em] sm:text-[34px]">
+              Up for auction
             </h2>
-            <span className="text-[12px] tabular-nums text-fg-3">
-              {creators.length} creators ·{" "}
-              {creators.filter((c) => c.status === "live").length} live
+            <span className="text-[13.5px] text-ash">
+              {creators.length} creators, {liveCount} live now
             </span>
           </div>
-          <div
-            className="flex rounded-full border border-line bg-raised p-0.5"
-            role="group"
-            aria-label="Sort creators"
-          >
+          <div className="flex items-center gap-5" role="group" aria-label="Sort creators">
             {SORTS.map((option) => (
               <button
                 key={option.key}
                 type="button"
                 aria-pressed={sort === option.key}
                 onClick={() => changeSort(option.key)}
-                className={`rounded-full px-3 py-1.5 text-[12.5px] font-medium transition-colors ${
+                className={`relative py-1 text-[14px] transition-colors after:absolute after:inset-x-0 after:-bottom-[17px] after:h-px ${
                   sort === option.key
-                    ? "bg-panel-2 text-fg shadow-[inset_0_0_0_1px_rgb(255_255_255/0.06)]"
-                    : "text-fg-3 hover:text-fg"
+                    ? "text-ink after:bg-ink"
+                    : "text-ash after:bg-transparent hover:text-ink"
                 }`}
               >
                 {option.label}
@@ -359,7 +295,7 @@ export function LiveBoard({ creators = CREATORS, live }: Props) {
 
         <div
           ref={gridRef}
-          className="grid grid-cols-2 gap-2.5 sm:gap-4 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5"
+          className="mt-8 grid grid-cols-2 gap-x-4 gap-y-12 sm:gap-x-6 md:grid-cols-3 lg:grid-cols-4 lg:gap-x-8 lg:gap-y-14"
         >
           {sorted.map((creator) => {
             const real = latestReal[creator.slug];
@@ -388,12 +324,13 @@ export function LiveBoard({ creators = CREATORS, live }: Props) {
           })}
         </div>
 
-        <p className="mt-10 max-w-[80ch] text-[11.5px] leading-relaxed text-fg-3">
-          Live on devnet: the program, the {hero?.name ?? "hero"} auction, its
-          bids and settlement. Every chip marked on-chain opens the transaction
-          on Solana Explorer. Demo data: follower counts are seeded; view
-          momentum, watcher counts and ticker entries marked SIM are simulated.
-          Conversion fills in from the on-chain click counter.
+        <p className="mt-20 max-w-[72ch] border-t border-hairline pt-5 text-[12.5px] leading-relaxed text-ash">
+          On devnet and checkable: the program, the {hero?.name ?? "live"}{" "}
+          auction, its bids and its settlement. Anything marked verified opens
+          the transaction on Solana Explorer. For the demo, follower counts are
+          seeded, and view trends, watcher counts and ticker entries marked
+          simulated are generated. Conversion fills in from the on-chain click
+          counter.
         </p>
       </main>
     </div>
@@ -403,43 +340,35 @@ export function LiveBoard({ creators = CREATORS, live }: Props) {
 const STEPS = [
   {
     title: "Bid SOL",
-    body: "Escrowed on-chain. Outbid? Refunded in the same tx.",
+    body: "Bids sit in on-chain escrow. If you're outbid, you're refunded in the same transaction.",
   },
   {
     title: "Win the slot",
-    body: "Top bid pays the creator. Your logo goes in the video.",
+    body: "The top bid pays the creator when the auction closes, and your logo goes in the video.",
   },
   {
     title: "Count every click",
-    body: "Your tracked link logs clicks on Solana.",
+    body: "You get a tracked link. Each click through it is recorded on Solana.",
   },
 ];
 
 function HowItWorks() {
   return (
-    <ol className="grid grid-cols-3 gap-1.5 sm:gap-2" aria-label="How it works">
+    <ol className="grid gap-px border-y border-hairline sm:grid-cols-3" aria-label="How it works">
       {STEPS.map((step, i) => (
         <li
           key={step.title}
-          className="relative min-w-0 rounded-[14px] border border-line bg-raised px-2.5 py-2.5 sm:px-3.5 sm:py-3"
+          className="flex gap-4 py-5 sm:block sm:py-6 sm:pr-10 [&+li]:border-t [&+li]:border-hairline sm:[&+li]:border-l sm:[&+li]:border-t-0 sm:[&+li]:pl-8"
         >
-          <span
-            className={`font-mono text-[10px] font-medium ${i === 2 ? "text-live-ink" : "text-fg-3"}`}
-          >
-            0{i + 1}
+          <span className="font-serif text-[22px] leading-none text-ash sm:text-[26px]">
+            {i + 1}
           </span>
-          <p className="mt-1 text-[12.5px] font-semibold leading-tight tracking-[-0.01em] sm:text-[14px]">
-            {step.title}
-          </p>
-          <p className="mt-1 hidden text-[12px] leading-snug text-fg-3 sm:block">
-            {step.body}
-          </p>
-          {i < STEPS.length - 1 ? (
-            <span
-              aria-hidden
-              className="absolute -right-[7px] top-1/2 z-[1] hidden size-3 -translate-y-1/2 rotate-45 border-r border-t border-line-strong bg-canvas sm:block"
-            />
-          ) : null}
+          <div className="sm:mt-4">
+            <p className="text-[15px] font-medium">{step.title}</p>
+            <p className="mt-1.5 max-w-[36ch] text-[14px] leading-[1.55] text-graphite">
+              {step.body}
+            </p>
+          </div>
         </li>
       ))}
     </ol>

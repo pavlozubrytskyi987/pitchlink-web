@@ -90,8 +90,8 @@ export function ProductViewer() {
   return (
     <section
       ref={frameRef}
-      className={`relative flex h-full min-h-[480px] flex-col overflow-hidden rounded-[20px] border bg-raised transition-colors duration-700 sm:min-h-[560px] ${
-        claim ? "border-live/40" : "border-line"
+      className={`relative flex h-full min-h-[480px] flex-col overflow-hidden rounded-[14px] border bg-[#efefed] transition-colors duration-700 sm:min-h-[560px] ${
+        claim ? "border-accent/40" : "border-hairline"
       }`}
       onDragOver={(event) => event.preventDefault()}
       onDrop={(event) => {
@@ -157,7 +157,7 @@ export function ProductViewer() {
       </div>
 
       <div className="px-3 pb-3">
-        <div className="flex h-12 items-center gap-3 rounded-[14px] border border-line bg-panel px-3">
+        <div className="flex h-12 items-center gap-3 rounded-[10px] border border-hairline bg-paper px-3.5">
           <input
             ref={fileRef}
             type="file"
@@ -175,18 +175,18 @@ export function ProductViewer() {
               if (!locked) fileRef.current?.click();
             }}
             className={`min-w-0 flex-1 truncate text-left text-[13px] ${
-              settled ? "text-live-ink" : logoName ? "text-fg" : "text-fg-3 hover:text-fg-2"
+              settled ? "text-accent" : logoName ? "text-ink" : "text-ash hover:text-graphite"
             }`}
           >
             {settled
               ? winner
                 ? "✓ Winner’s logo, locked to the placement"
                 : "Settled. The winning logo was saved in the winner’s browser."
-              : (logoName ?? "+ Upload your logo. It sits on the shirt or the laptop.")}
+              : (logoName ?? "Upload your logo. It goes on the shirt or the laptop.")}
           </button>
           {!locked && logoUrl ? (
             <>
-              <label className="hidden items-center gap-2 text-xs text-fg-3 sm:flex">
+              <label className="hidden items-center gap-2 text-xs text-ash sm:flex">
                 Size
                 <input
                   type="range"
@@ -196,10 +196,10 @@ export function ProductViewer() {
                   value={logoScale}
                   onChange={(event) => setLogoScale(Number(event.target.value))}
                   aria-label="Logo size"
-                  className="w-24 accent-[var(--color-live)]"
+                  className="w-24 accent-[var(--color-ink)]"
                 />
               </label>
-              <button type="button" onClick={clearLogo} className="text-[13px] text-fg-2 hover:text-fg">
+              <button type="button" onClick={clearLogo} className="text-[13px] text-graphite hover:text-ink">
                 Remove
               </button>
             </>
@@ -255,7 +255,7 @@ function Segmented<T extends string>({
   onChange: (id: T) => void;
 }) {
   return (
-    <div className="flex items-center rounded-full border border-line bg-panel p-0.5">
+    <div className="flex items-center rounded-full border border-hairline bg-paper p-0.5">
       {options.map((option) => {
         const active = option.id === value;
         return (
@@ -264,7 +264,7 @@ function Segmented<T extends string>({
             type="button"
             onClick={() => onChange(option.id)}
             className={`rounded-full px-3 py-1 text-[12.5px] transition-colors ${
-              active ? "bg-panel-2 font-medium text-fg" : "text-fg-3 hover:text-fg-2"
+              active ? "bg-ink text-paper" : "text-graphite hover:text-ink"
             }`}
           >
             {option.label}
@@ -289,7 +289,7 @@ function IconButton({
       type="button"
       aria-label={label}
       onClick={onClick}
-      className="grid size-8 place-items-center rounded-full border border-line bg-panel text-fg-2 transition-colors hover:border-line-strong hover:text-fg"
+      className="grid size-8 place-items-center rounded-full border border-hairline bg-paper text-graphite transition-colors hover:border-hairline-strong hover:text-ink"
     >
       {children}
     </button>

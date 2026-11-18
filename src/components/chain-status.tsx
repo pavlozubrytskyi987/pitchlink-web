@@ -3,7 +3,7 @@
 import { useConnection } from "@solana/wallet-adapter-react";
 import { useEffect, useState } from "react";
 import { ExternalIcon } from "@/components/icons";
-import { explorerAddress, explorerTx, shortAddress } from "@/lib/explorer";
+import { explorerAddress, shortAddress } from "@/lib/explorer";
 
 /** Current devnet slot, live from the RPC: proof the page is on-chain now. */
 function useSlot(): number | null {
@@ -43,61 +43,93 @@ function useSlot(): number | null {
   return slot;
 }
 
-/** "● Live on Solana devnet · slot 523,504,209" */
-export function ChainStatus({ compact = false }: { compact?: boolean }) {
-  const slot = useSlot();
+function LiveDot() {
+  return (
+    <span className="relative inline-flex size-[7px] shrink-0">
+      <span className="live-dot absolute inset-0 rounded-full bg-accent/40" />
+      <span className="relative m-auto size-[5px] rounded-full bg-accent" />
+    </span>
+  );
+}
+
+/** Header indicator: "● Solana devnet". */
+export function ChainStatus() {
   return (
     <a
       href="https://explorer.solana.com/?cluster=devnet"
       target="_blank"
       rel="noopener noreferrer"
       title="Connected to Solana devnet. Opens Solana Explorer."
-      className={`inline-flex shrink-0 items-center gap-2 rounded-full border border-live/25 bg-live/[0.06] text-live-ink transition-colors hover:border-live/50 ${
-        compact ? "h-7 px-2.5 text-[11.5px]" : "h-8 px-3 text-[12.5px]"
-      }`}
+      className="inline-flex items-center gap-2 text-[13px] text-graphite transition-colors hover:text-ink"
     >
-      <span className="relative flex size-2">
-        <span className="live-dot absolute inset-0 rounded-full bg-live/60 blur-[3px]" />
-        <span className="relative size-2 rounded-full bg-live" />
-      </span>
-      <span className="font-semibold">
-        {compact ? "Devnet" : "Live on Solana devnet"}
-      </span>
-      {!compact ? (
-        <span className="hidden font-mono text-[11px] tabular-nums text-fg-3 sm:inline">
-          slot{" "}
-          <span className="text-fg-2" suppressHydrationWarning>
-            {slot === null ? "…" : slot.toLocaleString("en-US")}
-          </span>
-        </span>
-      ) : null}
+      <LiveDot />
+      Solana devnet
     </a>
   );
 }
 
-/** Mono address chip that opens Explorer. */
-export function ProofLink({
+function ProofRow({
   label,
-  address,
-  tx = false,
+  children,
 }: {
   label: string;
-  address: string;
-  tx?: boolean;
+  children: React.ReactNode;
 }) {
   return (
+    <div className="flex items-baseline justify-between gap-4 border-b border-hairline py-2.5">
+      <dt className="text-graphite">{label}</dt>
+      <dd className="min-w-0 text-right">{children}</dd>
+    </div>
+  );
+}
+
+function AddressLink({ address }: { address: string }) {
+  return (
     <a
-      href={tx ? explorerTx(address) : explorerAddress(address)}
+      href={explorerAddress(address)}
       target="_blank"
       rel="noopener noreferrer"
-      title={`${label}: ${address}. Opens Solana Explorer.`}
-      className="group/proof inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full border border-line bg-raised px-3 text-[12.5px] text-fg-3 transition-colors hover:border-line-strong hover:text-fg-2"
+      title={`${address}. Opens Solana Explorer.`}
+      className="group inline-flex items-center gap-1.5 font-mono text-[12.5px] text-ink underline decoration-hairline-strong underline-offset-4 transition-colors hover:text-accent hover:decoration-accent"
     >
-      <span>{label}</span>
-      <span className="font-mono text-[11.5px] text-fg-2 group-hover/proof:text-fg group-hover/proof:underline group-hover/proof:underline-offset-2">
-        {shortAddress(address)}
-      </span>
-      <ExternalIcon className="size-3 text-fg-3 group-hover/proof:text-live-ink" />
+      {shortAddress(address)}
+      <ExternalIcon className="size-3 text-ash group-hover:text-accent" />
     </a>
+  );
+}
+
+/** Ledger of the live, checkable facts behind the board. */
+export function ProofList({
+  programId,
+  auctionAddress,
+}: {
+  programId: string;
+  auctionAddress: string | null;
+}) {
+  const slot = useSlot();
+  return (
+    <dl className="w-full border-t border-ink text-[13.5px]">
+      <ProofRow label="Network">
+        <span className="inline-flex items-center gap-2">
+          <LiveDot />
+          Solana devnet
+        </span>
+      </ProofRow>
+      <ProofRow label="Current slot">
+        <span suppressHydrationWarning>
+          {slot === null ? "…" : slot.toLocaleString("en-US")}
+        </span>
+      </ProofRow>
+      <ProofRow label="Program">
+        <AddressLink address={programId} />
+      </ProofRow>
+      <ProofRow label="Live auction">
+        {auctionAddress ? (
+          <AddressLink address={auctionAddress} />
+        ) : (
+          <span className="text-ash">Reading…</span>
+        )}
+      </ProofRow>
+    </dl>
   );
 }
