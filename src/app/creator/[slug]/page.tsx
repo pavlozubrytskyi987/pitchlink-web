@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ConversionStat } from "@/components/conversion-stat";
-import { Countdown } from "@/components/countdown";
 import { SiteHeader } from "@/components/site-header";
 import { CREATORS } from "@/data/creators";
 
@@ -58,7 +57,7 @@ export default async function CreatorPage({ params }: { params: Promise<{ slug: 
               {creator.name}
             </h1>
             <p className="mt-2 text-[15px] text-graphite">
-              {creator.niche}, {creator.handle}. {creator.followers.toLocaleString("en-US")} followers.
+              {creator.niche}, {creator.handle}.
             </p>
 
             <ConversionStat creator={creator.creatorPubkey ?? creator.auctionCreatorPubkey} />
@@ -78,17 +77,9 @@ export default async function CreatorPage({ params }: { params: Promise<{ slug: 
                   </Link>
                 </div>
               ) : (
-                <div className="flex flex-wrap items-end justify-between gap-4">
-                  <div>
-                    <p className="text-[13px] text-graphite">Auction</p>
-                    <p className="mt-1 text-[16px]">Opens with the next video</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-[13px] text-graphite">Next video in</p>
-                    <p className="mt-1 text-[16px] tabular-nums">
-                      <Countdown to={creator.nextVideoAt} ended="Dropping" />
-                    </p>
-                  </div>
+                <div>
+                  <p className="text-[13px] text-graphite">Auction</p>
+                  <p className="mt-1 text-[16px]">Opens with the next video</p>
                 </div>
               )}
             </div>

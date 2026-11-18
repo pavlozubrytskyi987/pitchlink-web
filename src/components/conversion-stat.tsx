@@ -22,7 +22,7 @@ export function ConversionStat({ creator }: { creator: string | null }) {
       </p>
       <p className="mt-2 max-w-[48ch] text-[14px] leading-snug text-graphite">
         Verified clicks through this creator&rsquo;s tracked link, counted on
-        Solana. This is what the slot is priced on, not followers.
+        Solana. This is what the slot is priced on.
       </p>
     </div>
   );

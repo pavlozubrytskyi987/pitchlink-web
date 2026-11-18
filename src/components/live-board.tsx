@@ -21,18 +21,23 @@ import { useAllClicks } from "@/lib/use-all-clicks";
 import { useHeroAuction } from "@/lib/use-hero-auction";
 import { observeInView, observeNear } from "@/lib/visibility";
 
-type SortKey = "hot" | "ending" | "bid";
+type SortKey = "hot" | "bid";
 
 const SORTS: { key: SortKey; label: string }[] = [
   { key: "hot", label: "Hot" },
-  { key: "ending", label: "Ending soon" },
   { key: "bid", label: "Top bid" },
 ];
 
 type Props = {
   creators?: Creator[];
-  /** Real on-chain values per creator slug. Overrides the seeded defaults. */
+  /** Real on-chain values per creator slug. Overrides defaults. */
   live?: Record<string, Partial<TileLive>>;
+};
+
+const EMPTY_LIVE: TileLive = {
+  currentBidSol: null,
+  auctionEndsAt: null,
+  lastBid: null,
 };
 
 const REDUCED_MOTION = "(prefers-reduced-motion: reduce)";
@@ -49,30 +54,12 @@ function useReducedMotion(): boolean {
   );
 }
 
-function seededLive(creators: Creator[]): Record<string, TileLive> {
-  const out: Record<string, TileLive> = {};
-  creators.forEach((c, i) => {
-    const live = c.status === "live";
-    out[c.slug] = {
-      // The live hero's bid and end time are read from its devnet auction
-      // account (useHeroAuction); nothing is invented while that loads.
-      currentBidSol: null,
-      auctionEndsAt: null,
-      watchers: live ? 8 : 2 + ((i * 3) % 7),
-      lastBid: null,
-    };
-  });
-  return out;
-}
-
 const BoardTile = memo(function BoardTile({
   creator,
-  base,
   override,
   reducedMotion,
 }: {
   creator: Creator;
-  base: TileLive;
   override: Partial<TileLive> | undefined;
   reducedMotion: boolean;
 }) {
@@ -94,8 +81,8 @@ const BoardTile = memo(function BoardTile({
   }, []);
 
   const live = useMemo(
-    () => (override ? { ...base, ...override } : base),
-    [base, override],
+    () => (override ? { ...EMPTY_LIVE, ...override } : EMPTY_LIVE),
+    [override],
   );
 
   const tile = (
@@ -127,7 +114,6 @@ const BoardTile = memo(function BoardTile({
 
 export function LiveBoard({ creators = CREATORS, live }: Props) {
   const [sort, setSort] = useState<SortKey>("hot");
-  const [seeded, setSeeded] = useState(() => seededLive(creators));
   const [latestReal, setLatestReal] = useState<Record<string, BidEntry>>({});
   const reducedMotion = useReducedMotion();
   const gridRef = useRef<HTMLDivElement>(null);
@@ -169,40 +155,17 @@ export function LiveBoard({ creators = CREATORS, live }: Props) {
     return { ...live, [hero.slug]: { ...chain, ...live?.[hero.slug] } };
   }, [hero, heroChain, live]);
 
-  // Simulated watcher drift: one tile every few seconds, so one tile re-renders.
-  useEffect(() => {
-    const id = window.setInterval(() => {
-      const creator = creators[Math.floor(Math.random() * creators.length)];
-      setSeeded((prev) => {
-        const current = prev[creator.slug];
-        const watchers = Math.min(
-          12,
-          Math.max(1, current.watchers + (Math.random() < 0.55 ? 1 : -1)),
-        );
-        return { ...prev, [creator.slug]: { ...current, watchers } };
-      });
-    }, 3500);
-    return () => window.clearInterval(id);
-  }, [creators]);
-
   const sorted = useMemo(() => {
-    const bid = (c: Creator) =>
-      liveAll?.[c.slug]?.currentBidSol ?? seeded[c.slug]?.currentBidSol ?? -1;
-    const ends = (c: Creator) =>
-      liveAll?.[c.slug]?.auctionEndsAt ??
-      seeded[c.slug]?.auctionEndsAt ??
-      c.nextVideoAt;
+    const bid = (c: Creator) => liveAll?.[c.slug]?.currentBidSol ?? -1;
     const list = creators.slice();
     const liveRank = (c: Creator) => (c.status === "live" ? 0 : 1);
     if (sort === "hot") {
-      list.sort((a, b) => liveRank(a) - liveRank(b) || b.trendPct - a.trendPct);
-    } else if (sort === "ending") {
-      list.sort((a, b) => ends(a) - ends(b));
+      list.sort((a, b) => liveRank(a) - liveRank(b));
     } else {
-      list.sort((a, b) => bid(b) - bid(a) || b.followers - a.followers);
+      list.sort((a, b) => bid(b) - bid(a) || liveRank(a) - liveRank(b));
     }
     return list;
-  }, [creators, liveAll, seeded, sort]);
+  }, [creators, liveAll, sort]);
 
   function changeSort(next: SortKey) {
     if (next === sort) return;
@@ -256,10 +219,9 @@ export function LiveBoard({ creators = CREATORS, live }: Props) {
               Creator ad slots, priced by real conversion.
             </h1>
             <p className="mt-6 max-w-[58ch] text-[16px] leading-[1.6] text-graphite sm:text-[17px]">
-              Brands bid SOL for a slot in a small creator&rsquo;s next video.
+              Brands bid SOL for a slot in a crypto creator&rsquo;s next video.
               The winner gets a tracked link, and every click through it is
-              recorded on Solana, so creators earn on results instead of
-              follower count.
+              recorded on Solana, so creators earn on verified conversion.
             </p>
           </div>
           <ProofList programId={PROGRAM_ID} auctionAddress={heroChain?.address ?? null} />
@@ -273,7 +235,8 @@ export function LiveBoard({ creators = CREATORS, live }: Props) {
               Up for auction
             </h2>
             <span className="text-[13.5px] text-ash">
-              {creators.length} creators, {liveCount} live now
+              {creators.length} {creators.length === 1 ? "creator" : "creators"},{" "}
+              {liveCount} live now
             </span>
           </div>
           <div className="flex items-center gap-5" role="group" aria-label="Sort creators">
@@ -323,7 +286,6 @@ export function LiveBoard({ creators = CREATORS, live }: Props) {
               <BoardTile
                 key={creator.slug}
                 creator={creator}
-                base={seeded[creator.slug]}
                 override={merged}
                 reducedMotion={reducedMotion}
               />
@@ -332,12 +294,9 @@ export function LiveBoard({ creators = CREATORS, live }: Props) {
         </div>
 
         <p className="mt-20 max-w-[72ch] border-t border-hairline pt-5 text-[12.5px] leading-relaxed text-ash">
-          On devnet and checkable: the program, the {hero?.name ?? "live"}{" "}
-          auction, its bids and its settlement. Anything marked verified opens
-          the transaction on Solana Explorer. For the demo, follower counts are
-          seeded, and view trends, watcher counts and ticker entries marked
-          simulated are generated. Conversion fills in from the on-chain click
-          counter.
+          Every number in this app is on-chain and checkable on Solana devnet:
+          bid amounts, settle amounts, click counts. Anything else is left out.
+          Verified markers open the transaction on Solana Explorer.
         </p>
       </main>
     </div>
