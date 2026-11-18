@@ -48,8 +48,8 @@ export function LogoStage({
       camera={{ position: [0, 0.08, 4.15], fov: 30 }}
       className="h-full w-full"
     >
-      <color attach="background" args={["#f6f5f3"]} />
-      <hemisphereLight args={["#ffffff", "#e4e0d8", 0.95]} />
+      <color attach="background" args={["#efefed"]} />
+      <hemisphereLight args={["#ffffff", "#e4e2dc", 0.95]} />
       <ambientLight intensity={0.45} />
       <directionalLight position={[3, 5, 6]} intensity={1.45} />
       <directionalLight position={[-4, 2, 2]} intensity={0.35} />
@@ -206,7 +206,7 @@ function prepareScene(source: THREE.Group, product: ProductId) {
       const next = material.clone();
         next.side = THREE.DoubleSide;
         if (product === "shirt" && next instanceof THREE.MeshStandardMaterial) {
-          next.color.set("#e6e6e4");
+          next.color.set("#ffffff");
           next.roughness = 0.72;
           next.metalness = 0;
         }

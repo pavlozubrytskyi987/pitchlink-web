@@ -4,6 +4,7 @@ import dynamic from "next/dynamic";
 import { useEffect, useRef, useState } from "react";
 import { useLogoDraft } from "@/components/logo-draft";
 import type { ProductId } from "@/components/logo-stage";
+import { SlotClaimed } from "@/components/slot-claimed";
 
 const LogoStage = dynamic(
   () => import("@/components/logo-stage").then((mod) => mod.LogoStage),
@@ -27,9 +28,24 @@ export function ProductViewer() {
   });
   const [dragging, setDragging] = useState(false);
   const [resetToken, setResetToken] = useState(0);
-  const { setDraft, winner, settled } = useLogoDraft();
+  const { setDraft, winner, settled, claim } = useLogoDraft();
   const locked = settled;
-  const shownUrl = settled ? (winner?.dataUrl ?? null) : logoUrl;
+  // During the SLOT CLAIMED reveal the 3D decal waits until the flying logo
+  // lands on the placement, so the logo visibly locks on.
+  const [revealHold, setRevealHold] = useState(false);
+  const claimKey = claim ? `${claim.auction}:${claim.winner}` : null;
+  useEffect(() => {
+    if (!claimKey) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    setRevealHold(true);
+    const id = window.setTimeout(() => setRevealHold(false), 1250);
+    return () => window.clearTimeout(id);
+  }, [claimKey]);
+  const shownUrl = settled
+    ? revealHold
+      ? null
+      : (winner?.dataUrl ?? null)
+    : logoUrl;
   const shownAspect = settled ? (winner?.aspect ?? 1) : logoAspect;
   const shownScale = settled ? (winner?.scale ?? 1) : logoScale;
   const shownOffset = settled ? (winner?.offsets[product] ?? { x: 0, y: 0 }) : offsets[product];
@@ -74,7 +90,9 @@ export function ProductViewer() {
   return (
     <section
       ref={frameRef}
-      className="relative flex h-full min-h-[560px] flex-col overflow-hidden rounded-2xl border border-[#e6e4df] bg-[#f6f5f3]"
+      className={`relative flex h-full min-h-[480px] flex-col overflow-hidden rounded-[14px] border bg-[#efefed] transition-colors duration-700 sm:min-h-[560px] ${
+        claim ? "border-accent/40" : "border-hairline"
+      }`}
       onDragOver={(event) => event.preventDefault()}
       onDrop={(event) => {
         event.preventDefault();
@@ -118,6 +136,10 @@ export function ProductViewer() {
         </div>
       </div>
 
+      {claim ? (
+        <SlotClaimed key={claimKey} claim={claim} logoUrl={winner?.dataUrl ?? null} />
+      ) : null}
+
       <div className={`relative min-h-0 flex-1 ${dragging ? "cursor-grabbing" : ""}`}>
         <LogoStage
           product={product}
@@ -135,7 +157,7 @@ export function ProductViewer() {
       </div>
 
       <div className="px-3 pb-3">
-        <div className="flex h-12 items-center gap-3 rounded-xl bg-white px-3 shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
+        <div className="flex h-12 items-center gap-3 rounded-[10px] border border-hairline bg-paper px-3.5">
           <input
             ref={fileRef}
             type="file"
@@ -152,17 +174,19 @@ export function ProductViewer() {
             onClick={() => {
               if (!locked) fileRef.current?.click();
             }}
-            className="min-w-0 flex-1 truncate text-left text-sm text-[#8a8884]"
+            className={`min-w-0 flex-1 truncate text-left text-[13px] ${
+              settled ? "text-accent" : logoName ? "text-ink" : "text-ash hover:text-graphite"
+            }`}
           >
             {settled
               ? winner
-                ? "Winner’s logo"
-                : "No winning logo was saved in this browser"
-              : (logoName ?? "Upload a logo — it sits on the shirt or the laptop")}
+                ? "✓ Winner’s logo, locked to the placement"
+                : "Settled. The winning logo was saved in the winner’s browser."
+              : (logoName ?? "Upload your logo. It goes on the shirt or the laptop.")}
           </button>
           {!locked && logoUrl ? (
             <>
-              <label className="flex items-center gap-2 text-xs text-[#8a8884]">
+              <label className="hidden items-center gap-2 text-xs text-ash sm:flex">
                 Size
                 <input
                   type="range"
@@ -172,9 +196,10 @@ export function ProductViewer() {
                   value={logoScale}
                   onChange={(event) => setLogoScale(Number(event.target.value))}
                   aria-label="Logo size"
+                  className="w-24 accent-[var(--color-ink)]"
                 />
               </label>
-              <button type="button" onClick={clearLogo} className="text-sm text-[#1c1c1c]">
+              <button type="button" onClick={clearLogo} className="text-[13px] text-graphite hover:text-ink">
                 Remove
               </button>
             </>
@@ -194,12 +219,12 @@ function readLogo(file: File): Promise<{ dataUrl: string; aspect: number }> {
       const image = new Image();
       image.onload = () => {
         const aspect = image.width / Math.max(image.height, 1);
-        if (file.type === "image/svg+xml") {
-          resolve({ dataUrl, aspect });
-          return;
-        }
+        // SVGs are rasterized too: one without width/height never renders
+        // as a WebGL decal. They scale up to the cap so they stay crisp.
+        const isSvg = file.type === "image/svg+xml";
         const max = 1024;
-        const scale = Math.min(1, max / Math.max(image.width, image.height));
+        const fit = max / Math.max(image.width, image.height);
+        const scale = isSvg ? fit : Math.min(1, fit);
         const width = Math.max(1, Math.round(image.width * scale));
         const height = Math.max(1, Math.round(image.height * scale));
         const canvas = document.createElement("canvas");
@@ -230,7 +255,7 @@ function Segmented<T extends string>({
   onChange: (id: T) => void;
 }) {
   return (
-    <div className="flex items-center rounded-lg bg-white p-1">
+    <div className="flex items-center rounded-full border border-hairline bg-paper p-0.5">
       {options.map((option) => {
         const active = option.id === value;
         return (
@@ -238,8 +263,8 @@ function Segmented<T extends string>({
             key={option.id}
             type="button"
             onClick={() => onChange(option.id)}
-            className={`rounded-md px-3 py-1 text-sm outline-none focus-visible:ring-2 focus-visible:ring-[#e6e4df] ${
-              active ? "bg-[#f3f2ef] font-medium text-[#1c1c1c]" : "text-[#9a9a9a]"
+            className={`rounded-full px-3 py-1 text-[12.5px] transition-colors ${
+              active ? "bg-ink text-paper" : "text-graphite hover:text-ink"
             }`}
           >
             {option.label}
@@ -264,7 +289,7 @@ function IconButton({
       type="button"
       aria-label={label}
       onClick={onClick}
-      className="grid h-9 w-9 place-items-center rounded-lg border border-[#e6e4df] bg-white text-[#1c1c1c]"
+      className="grid size-8 place-items-center rounded-full border border-hairline bg-paper text-graphite transition-colors hover:border-hairline-strong hover:text-ink"
     >
       {children}
     </button>

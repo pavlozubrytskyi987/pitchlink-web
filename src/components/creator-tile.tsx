@@ -2,7 +2,9 @@
 
 import Link from "next/link";
 import { memo, useEffect, useRef, useState } from "react";
+import { CheckIcon, ExternalIcon } from "@/components/icons";
 import type { Creator } from "@/data/creators";
+import { explorerAddress, explorerTx, shortAddress } from "@/lib/explorer";
 import { subscribe } from "@/lib/ticker";
 
 export type TileLive = {
@@ -15,6 +17,10 @@ export type TileLive = {
   lastBid: { id: number; amountSol: number } | null;
   /** Devnet tx signature of the latest on-chain bid; absent for seeded data. */
   bidSignature?: string | null;
+  /** Devnet auction account (PDA) backing this tile, when it is real. */
+  auctionAddress?: string | null;
+  /** True once the on-chain auction has paid out. */
+  settled?: boolean;
 };
 
 type Props = {
@@ -29,8 +35,8 @@ type Props = {
 };
 
 const SPARK_W = 100;
-const SPARK_H = 46;
-const SPARK_PAD = 5;
+const SPARK_H = 30;
+const SPARK_PAD = 4;
 const STEP_MS = 1600;
 
 function hashString(s: string): number {
@@ -152,10 +158,68 @@ function compact(n: number): string {
   }).format(n);
 }
 
-const LABEL =
-  "text-[9px] font-medium uppercase tracking-[0.14em] text-[#a09d96]";
-const CHIP =
-  "rounded-full bg-white/90 px-2 py-1 text-[10px] font-semibold backdrop-blur-sm";
+const LABEL = "text-[12.5px] text-graphite";
+
+type SparkInit = ReturnType<typeof staticSpark>;
+
+/** Simulated views/day line. The tile's rAF loop writes into these refs. */
+function Sparkline({
+  initial,
+  initialHead,
+  lineRef,
+  areaRef,
+  dotRef,
+  headRef,
+}: {
+  initial: SparkInit;
+  initialHead: number;
+  lineRef: React.RefObject<SVGPathElement | null>;
+  areaRef: React.RefObject<SVGPathElement | null>;
+  dotRef: React.RefObject<HTMLSpanElement | null>;
+  headRef: React.RefObject<HTMLSpanElement | null>;
+}) {
+  return (
+    <div>
+      <div className="mb-1.5 flex items-baseline justify-between gap-2">
+        <p className="text-[12.5px] text-ash">Views a day, 30 days</p>
+        <p className="text-[12.5px] text-graphite">
+          <span ref={headRef} suppressHydrationWarning>
+            {compact(initialHead)}
+          </span>
+        </p>
+      </div>
+      <div className="relative" style={{ height: SPARK_H }}>
+        <svg
+          viewBox={`0 0 ${SPARK_W} ${SPARK_H}`}
+          preserveAspectRatio="none"
+          aria-hidden
+          className="spark-svg block size-full overflow-hidden"
+        >
+          <path ref={areaRef} d={initial.area} fill="#000" fillOpacity="0.035" />
+          <path
+            ref={lineRef}
+            d={initial.line}
+            fill="none"
+            stroke="#000"
+            strokeOpacity="0.55"
+            strokeWidth="1.1"
+            strokeLinejoin="round"
+            strokeLinecap="round"
+            vectorEffect="non-scaling-stroke"
+          />
+        </svg>
+        <span
+          ref={dotRef}
+          aria-hidden
+          className="spark-dot absolute right-0 top-0"
+          style={{
+            transform: `translate3d(0,${initial.headY.toFixed(2)}px,0)`,
+          }}
+        />
+      </div>
+    </div>
+  );
+}
 
 function CreatorTileImpl({
   creator,
@@ -176,8 +240,10 @@ function CreatorTileImpl({
   const [videoOn, setVideoOn] = useState(false);
 
   const isLive = creator.status === "live";
-  const countdownTarget = live.auctionEndsAt ?? creator.nextVideoAt;
-  const endedLabel = isLive ? "Ended" : "Dropping";
+  // The live tile waits for its real end time instead of showing a guess.
+  const countdownTarget =
+    live.auctionEndsAt ?? (isLive ? null : creator.nextVideoAt);
+  const endedLabel = isLive ? (live.settled ? "Settled" : "Ended") : "Dropping";
   const initial = staticSpark(creator.momentum);
 
   useEffect(() => {
@@ -196,9 +262,10 @@ function CreatorTileImpl({
       const second = Math.floor(Date.now() / 1000);
       if (second !== lastSecond) {
         lastSecond = second;
-        const remaining = countdownTarget - second;
+        const remaining =
+          countdownTarget === null ? null : countdownTarget - second;
         const cd = countdownRef.current;
-        if (cd) {
+        if (cd && remaining !== null) {
           cd.textContent = formatCountdown(remaining, endedLabel);
           if (isLive)
             cd.dataset.urgent = remaining > 0 && remaining < 3600 ? "1" : "";
@@ -260,154 +327,83 @@ function CreatorTileImpl({
     live.currentBidSol,
   ]);
 
-  const gradientId = `spark-fill-${creator.slug}`;
+  // Only real footage gets the media slot; seeded creators get a plate.
+  const realMedia = !creator.posterUrl.startsWith("data:");
 
   return (
-    <article className="tile group relative flex flex-col rounded-[20px] border border-[#e9e7e2] bg-[#f5f4f2] p-1.5 text-[#1c1c1c] transition-[transform,border-color,box-shadow] duration-300 ease-out hover:-translate-y-1 hover:border-[#d9d6cf] hover:shadow-[0_16px_36px_rgba(28,28,28,0.12)] motion-reduce:transition-none motion-reduce:hover:translate-y-0">
+    <article className="tile relative flex flex-col text-ink">
       {live.lastBid ? (
         <span
           key={live.lastBid.id}
           aria-hidden
-          className="tile-bid-ring pointer-events-none absolute -inset-px z-10 rounded-[20px]"
+          className="tile-bid-ring pointer-events-none absolute -inset-2.5 z-10 rounded-[14px]"
         />
       ) : null}
 
-      <div className="relative isolate aspect-[4/5] overflow-hidden rounded-[14px] bg-[#e6e4df]">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={creator.posterUrl}
-          alt=""
-          loading="lazy"
-          decoding="async"
-          onError={(e) => (e.currentTarget.style.visibility = "hidden")}
-          className="absolute inset-0 -z-10 size-full object-cover"
-        />
-        {mountVideo ? (
-          <video
-            ref={videoRef}
-            src={creator.clipUrl}
-            poster={creator.posterUrl}
-            muted
-            playsInline
-            loop
-            preload="metadata"
-            aria-hidden
-            tabIndex={-1}
-            onPlaying={() => setVideoOn(true)}
-            onPause={() => setVideoOn(false)}
-            onError={() => setVideoOn(false)}
-            className={`absolute inset-0 -z-10 size-full object-cover transition-opacity duration-500 ${videoOn ? "opacity-100" : "opacity-0"}`}
-          />
-        ) : null}
-        <div className="flex items-center justify-between gap-2 p-2">
-          {isLive ? (
-            <span className="live-badge flex items-center gap-1.5 rounded-full bg-[var(--accent)] px-2 py-1 text-[10px] font-semibold tracking-[0.12em] text-white shadow-[0_2px_10px_rgba(22,196,91,0.55)]">
-              <span className="live-dot size-1.5 rounded-full bg-white" />
-              LIVE
-            </span>
-          ) : (
-            <span className={`${CHIP} tracking-[0.1em] text-[#8d8d8d]`}>
-              SOON
-            </span>
-          )}
-          <span
-            className={`${CHIP} text-[11px] tabular-nums ${creator.trendPct < 0 ? "text-[#c4320a]" : "text-[var(--accent-ink)]"}`}
-          >
-            {creator.trendPct < 0 ? "▼" : "▲"} {Math.abs(creator.trendPct)}%
+      <div className="relative isolate aspect-[5/4] overflow-hidden rounded-[10px] bg-wash">
+        {realMedia ? (
+          <>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={creator.posterUrl}
+              alt=""
+              loading="lazy"
+              decoding="async"
+              onError={(e) => (e.currentTarget.style.visibility = "hidden")}
+              className="absolute inset-0 -z-10 size-full object-cover object-[50%_22%]"
+            />
+            {mountVideo ? (
+              <video
+                ref={videoRef}
+                src={creator.clipUrl}
+                poster={creator.posterUrl}
+                muted
+                playsInline
+                loop
+                preload="metadata"
+                aria-hidden
+                tabIndex={-1}
+                onPlaying={() => setVideoOn(true)}
+                onPause={() => setVideoOn(false)}
+                onError={() => setVideoOn(false)}
+                className={`absolute inset-0 -z-10 size-full object-cover object-[50%_22%] transition-opacity duration-500 ${videoOn ? "opacity-100" : "opacity-0"}`}
+              />
+            ) : null}
+          </>
+        ) : (
+          <div className="absolute inset-0 flex flex-col justify-end p-4 sm:p-5">
+            <p className="font-serif text-[26px] italic leading-none tracking-[-0.01em] sm:text-[34px]">
+              {creator.niche}
+            </p>
+          </div>
+        )}
+        {isLive ? (
+          <span className="absolute left-3 top-3 inline-flex items-center gap-1.5 rounded-full bg-paper px-2.5 py-1 text-[12px] font-medium text-accent shadow-[0_1px_3px_rgb(0_0_0/0.08)]">
+            <span className="live-dot size-[5px] rounded-full bg-accent" />
+            Live auction
           </span>
-        </div>
+        ) : null}
       </div>
 
-      <div className="flex min-w-0 flex-col gap-1.5 px-0.5 pb-1 pt-2 sm:gap-2 sm:px-1">
-        <div className="flex min-w-0 items-center gap-2">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={creator.avatarUrl}
-            alt=""
-            className="size-7 shrink-0 rounded-full sm:size-8"
-          />
-          <div className="min-w-0">
-            <p className="truncate text-[13px] font-semibold leading-tight sm:text-sm">
-              {creator.name}
-            </p>
-            <p className="truncate text-[11px] leading-tight text-[#8d8d8d]">
-              {creator.niche} · {compact(creator.followers)} followers
-            </p>
-          </div>
+      <div className="flex min-w-0 flex-col pt-4">
+        <div className="flex min-w-0 items-baseline justify-between gap-3">
+          <h3 className="truncate font-serif text-[21px] leading-tight tracking-[-0.015em] sm:text-[24px]">
+            {creator.name}
+          </h3>
+          <p className="hidden shrink-0 text-[12.5px] text-ash sm:block">
+            {compact(creator.followers)} followers
+          </p>
         </div>
-
-        <div>
-          <div className="mb-1 flex items-baseline justify-between gap-2">
-            <p className={LABEL}>Views / day · 30d</p>
-            <p className="text-[11px] font-semibold tabular-nums">
-              <span ref={headRef} suppressHydrationWarning>
-                {compact(creator.momentum[creator.momentum.length - 1])}
-              </span>
-            </p>
-          </div>
-          <div
-            className={`relative ${animate ? "spark-reveal" : ""}`}
-            style={{ height: SPARK_H }}
-          >
-            <svg
-              viewBox={`0 0 ${SPARK_W} ${SPARK_H}`}
-              preserveAspectRatio="none"
-              aria-hidden
-              className="spark-svg block size-full overflow-hidden"
-            >
-              <defs>
-                <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
-                  <stop
-                    offset="0"
-                    stopColor="var(--accent)"
-                    stopOpacity="0.16"
-                  />
-                  <stop offset="1" stopColor="var(--accent)" stopOpacity="0" />
-                </linearGradient>
-              </defs>
-              {[1 / 3, 2 / 3].map((f) => (
-                <line
-                  key={f}
-                  x1="0"
-                  x2={SPARK_W}
-                  y1={SPARK_H * f}
-                  y2={SPARK_H * f}
-                  stroke="#1c1c1c"
-                  strokeOpacity="0.07"
-                  strokeDasharray="2 3"
-                  vectorEffect="non-scaling-stroke"
-                />
-              ))}
-              <path
-                ref={areaRef}
-                d={initial.area}
-                fill={`url(#${gradientId})`}
-              />
-              <path
-                ref={lineRef}
-                d={initial.line}
-                fill="none"
-                stroke="var(--accent)"
-                strokeWidth="1.75"
-                strokeLinejoin="round"
-                strokeLinecap="round"
-                vectorEffect="non-scaling-stroke"
-              />
-            </svg>
-            <span
-              ref={dotRef}
-              aria-hidden
-              className="spark-dot absolute right-0 top-0"
-              style={{
-                transform: `translate3d(0,${initial.headY.toFixed(2)}px,0)`,
-              }}
-            />
-          </div>
-        </div>
+        <p className="mt-0.5 truncate text-[13px] text-graphite">
+          {realMedia ? `${creator.niche}, ${creator.handle}` : creator.handle}
+        </p>
 
         {/* Conversion slot: fills with real on-chain click-counter data.
             Until then, a muted placeholder instead of invented numbers. */}
-        <div>
+        <div
+          className="conv-slot mt-5 border-t border-ink pt-3"
+          data-empty={creator.conversionPct === null}
+        >
           <div className="flex items-baseline justify-between gap-2">
             <p className={LABEL}>Conversion</p>
             <p className="text-[9px] font-medium uppercase tracking-[0.14em] text-[#c4c1ba]">
@@ -420,91 +416,94 @@ function CreatorTileImpl({
               : "—"}
           </p>
         </div>
+        <p className="mt-2 text-[12.5px] leading-snug text-ash">
+          Clicks through the winner&rsquo;s tracked link, counted on Solana.
+        </p>
+
+        <div className="mt-5">
+          <Sparkline
+            initial={initial}
+            initialHead={creator.momentum[creator.momentum.length - 1]}
+            lineRef={lineRef}
+            areaRef={areaRef}
+            dotRef={dotRef}
+            headRef={headRef}
+          />
+        </div>
 
         {isLive ? (
-          <div className="rounded-[12px] border border-[var(--accent)]/30 bg-white/70 p-2 sm:p-2.5">
-            <div className="flex items-baseline justify-between gap-2">
+          <div className="mt-5 border-t border-hairline pt-3">
+            <div className="grid grid-cols-[minmax(0,1fr)_auto] items-baseline gap-x-3">
               <p className={LABEL}>Current bid</p>
-              <p className={LABEL}>Ends in</p>
+              <p className={`${LABEL} text-right`}>Closes in</p>
+                <p
+                  className={`mt-1.5 whitespace-nowrap font-serif text-[28px] leading-none tracking-[-0.02em] sm:text-[32px] ${live.lastBid ? "bid-pop" : ""}`}
+                  key={live.lastBid?.id ?? "initial"}
+                >
+                  <span ref={bidRef} suppressHydrationWarning>
+                    {live.currentBidSol === null
+                      ? "—"
+                      : formatSol(live.currentBidSol)}
+                  </span>{" "}
+                  <span className="font-sans text-[13px] tracking-normal text-graphite">
+                    SOL
+                  </span>
+                </p>
+                <p className="countdown-live text-right text-[15px] tabular-nums" data-urgent-color>
+                  <span ref={countdownRef} suppressHydrationWarning>
+                    --:--:--
+                  </span>
+                </p>
             </div>
-            <div className="mt-0.5 flex items-baseline justify-between gap-2">
-              <p
-                className={`text-[20px] font-semibold tabular-nums tracking-tight sm:text-[22px] ${live.lastBid ? "bid-pop" : ""}`}
-                key={live.lastBid?.id ?? "initial"}
+            {live.bidSignature || live.auctionAddress ? (
+              <a
+                href={
+                  live.bidSignature
+                    ? explorerTx(live.bidSignature)
+                    : explorerAddress(live.auctionAddress!)
+                }
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => e.stopPropagation()}
+                title="Opens Solana Explorer (devnet)"
+                className="group/proof mt-3 flex min-w-0 items-center gap-1.5 text-[12.5px] text-accent"
               >
-                <span ref={bidRef} suppressHydrationWarning>
-                  {formatSol(live.currentBidSol ?? 0)}
-                </span>{" "}
-                <span className="text-[13px] font-medium text-[#8d8d8d]">
-                  SOL
+                <CheckIcon className="size-3 shrink-0" />
+                <span className="shrink-0">Verified on Solana</span>
+                <span className="hidden truncate font-mono text-[12px] underline decoration-accent/30 underline-offset-4 group-hover/proof:decoration-accent sm:inline">
+                  {shortAddress(live.bidSignature ?? live.auctionAddress!)}
                 </span>
-              </p>
-              <p
-                className="text-[13px] font-semibold tabular-nums countdown-live"
-                data-urgent-color
-              >
+                <ExternalIcon className="size-3 shrink-0" />
+              </a>
+            ) : null}
+            <Link
+              href={creator.auctionCreatorPubkey ? "/auction" : `/creator/${creator.slug}`}
+              className="mt-4 flex h-11 items-center justify-center rounded-full bg-ink text-[14px] font-medium text-paper transition-colors hover:bg-[#262626]"
+            >
+              Place bid
+            </Link>
+            <p className="mt-2.5 text-[12.5px] text-ash">
+              {live.watchers} brands
+              watching
+            </p>
+          </div>
+        ) : (
+          <div className="mt-5 border-t border-hairline pt-3">
+            <div className="grid grid-cols-[minmax(0,1fr)_auto] items-baseline gap-x-3">
+              <p className={`${LABEL} hidden sm:block`}>Auction</p>
+              <p className={`${LABEL} sm:text-right`}>Next video in</p>
+              <p className="mt-1.5 hidden truncate text-[14px] sm:block">Opens soon</p>
+              <p className="text-[14px] tabular-nums sm:mt-1.5 sm:text-right">
                 <span ref={countdownRef} suppressHydrationWarning>
                   --:--:--
                 </span>
               </p>
             </div>
-            {live.bidSignature ? (
-              <a
-                href={`https://explorer.solana.com/tx/${live.bidSignature}?cluster=devnet`}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={(e) => e.stopPropagation()}
-                className="mt-0.5 inline-flex items-center gap-1 text-[11px] font-medium text-[var(--accent-ink)] hover:underline"
-              >
-                view on Explorer ↗
-              </a>
-            ) : null}
-            <Link
-              href={`/creator/${creator.slug}`}
-              className="mt-2 flex h-[34px] items-center justify-center rounded-full bg-[#161616] text-[12px] font-semibold text-white transition-colors hover:bg-[#2a2a2a]"
-            >
-              Place bid
-            </Link>
-            <div className="mt-1.5 flex items-center gap-1.5 text-[11px] text-[#8d8d8d]">
-              <span className="live-dot size-1.5 shrink-0 rounded-full bg-[var(--accent)]" />
-              <span className="truncate">
-                <span className="tabular-nums text-[#1c1c1c]">
-                  {live.watchers}
-                </span>{" "}
-                brands watching
-              </span>
-            </div>
+            <p className="mt-2.5 text-[12.5px] text-ash">
+              {live.watchers} brands
+              watching
+            </p>
           </div>
-        ) : (
-          <>
-            <div className="flex items-end justify-between gap-2 border-t border-[#e6e4df] pt-2">
-              <div className="min-w-0">
-                <p className={LABEL}>Auction</p>
-                <p className="truncate text-[12px] font-semibold tabular-nums sm:text-[13px]">
-                  Opens soon
-                </p>
-              </div>
-              <div className="shrink-0 text-right">
-                <p className={LABEL}>Next video</p>
-                <p className="text-[12px] font-semibold tabular-nums sm:text-[13px]">
-                  <span ref={countdownRef} suppressHydrationWarning>
-                    --:--:--
-                  </span>
-                </p>
-              </div>
-            </div>
-            <div className="relative h-4 overflow-hidden text-[11px] leading-4">
-              <p className="flex items-center gap-1.5 text-[#8d8d8d]">
-                <span className="live-dot size-1.5 shrink-0 rounded-full bg-[var(--accent)]" />
-                <span className="truncate">
-                  <span className="tabular-nums text-[#1c1c1c]">
-                    {live.watchers}
-                  </span>{" "}
-                  brands watching
-                </span>
-              </p>
-            </div>
-          </>
         )}
       </div>
     </article>

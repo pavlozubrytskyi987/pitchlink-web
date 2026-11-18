@@ -10,9 +10,11 @@ import {
   subscribeFeed,
   type BidEntry,
 } from "@/lib/bid-feed";
+import { CheckIcon, ExternalIcon } from "@/components/icons";
+import { explorerTx, shortAddress } from "@/lib/explorer";
 import { subscribe as subscribeTicker } from "@/lib/ticker";
 
-const SPEED_PX_PER_SEC = 42;
+const SPEED_PX_PER_SEC = 38;
 
 // Deterministic PRNG so first-paint HTML matches hydration.
 function mulberry32(seed: number) {
@@ -26,58 +28,68 @@ function mulberry32(seed: number) {
   };
 }
 
-function Chip({ entry, now }: { entry: BidEntry; now: number }) {
-  const real = entry.signature !== null;
-  const ago = Math.max(0, now - entry.ts);
-  const base =
-    "flex shrink-0 items-center gap-2 rounded-full border px-3 py-1.5 text-[12px] leading-none";
-  const look = real
-    ? "border-[var(--accent)]/40 bg-[var(--accent)]/10 text-[#1c1c1c]"
-    : "border-[#e9e7e2] bg-[#f5f4f2] text-[#5f5d58]";
+function formatSol(sol: number): string {
+  return sol.toLocaleString("en-US", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 3,
+  });
+}
+
+const ITEM =
+  "flex shrink-0 items-baseline gap-1.5 whitespace-nowrap px-5 text-[13px] leading-none";
+
+function RealChip({ entry, now }: { entry: BidEntry; now: number }) {
+  const signature = entry.signature!;
   return (
-    <span className={`${base} ${look}`}>
-      {real ? (
-        <span
-          className="live-dot shrink-0 text-[10px] font-semibold tracking-[0.1em] text-[var(--accent-ink)]"
-          title="On-chain bid"
-        >
-          ⚡ LIVE
-        </span>
-      ) : (
-        <span
-          className="size-1.5 shrink-0 rounded-full bg-[#c8c6c0]"
-          aria-hidden
-        />
-      )}
-      <span className="font-mono text-[11px] tabular-nums text-[#8d8d8d]">
-        {entry.bidder}
-      </span>
+    <a
+      href={explorerTx(signature)}
+      target="_blank"
+      rel="noopener noreferrer"
+      title="Verified on Solana devnet. Opens the transaction on Solana Explorer."
+      className={`${ITEM} group/chip text-ink`}
+    >
+      <CheckIcon className="size-3 shrink-0 translate-y-[1px] text-accent" />
+      <span className="font-mono text-[12px] text-graphite">{entry.bidder}</span>
       <span>
         bid{" "}
-        <span className="font-semibold tabular-nums text-[#1c1c1c]">
-          {entry.amountSol.toFixed(2)} SOL
+        <span className="font-medium">
+          {formatSol(entry.amountSol)} SOL
         </span>{" "}
-        on{" "}
+        on {entry.creatorName}
+      </span>
+      <span className="text-ash">{formatAgo(Math.max(0, now - entry.ts))}</span>
+      <span className="inline-flex items-center gap-1 font-mono text-[12px] text-accent underline decoration-accent/30 underline-offset-4 group-hover/chip:decoration-accent">
+        {shortAddress(signature)}
+        <ExternalIcon className="size-3" />
+      </span>
+    </a>
+  );
+}
+
+function SimChip({ entry, now }: { entry: BidEntry; now: number }) {
+  return (
+    <span className={`${ITEM} text-ash`} title="Simulated activity, not on-chain">
+      <span className="text-[12px] italic">simulated</span>
+      <span className="font-mono text-[12px]">{entry.bidder}</span>
+      <span>
+        watching{" "}
         <Link
           href={`/creator/${entry.creatorSlug}`}
-          className="font-semibold text-[#1c1c1c] underline-offset-2 hover:underline"
+          className="text-graphite underline-offset-4 hover:text-ink hover:underline"
         >
           {entry.creatorName}
         </Link>
       </span>
-      <span className="text-[11px] text-[#a09d96]">{formatAgo(ago)}</span>
-      {real && entry.signature ? (
-        <a
-          href={`https://explorer.solana.com/tx/${entry.signature}?cluster=devnet`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="shrink-0 text-[11px] font-medium text-[var(--accent-ink)] hover:underline"
-          onClick={(e) => e.stopPropagation()}
-        >
-          view on Explorer ↗
-        </a>
-      ) : null}
+      <span>{formatAgo(Math.max(0, now - entry.ts))}</span>
     </span>
+  );
+}
+
+function Chip({ entry, now }: { entry: BidEntry; now: number }) {
+  return entry.signature ? (
+    <RealChip entry={entry} now={now} />
+  ) : (
+    <SimChip entry={entry} now={now} />
   );
 }
 
@@ -93,21 +105,21 @@ export function BidTicker() {
   // Client-side init so SSR HTML is stable (empty) and first paint matches.
   useEffect(() => {
     const rnd = mulberry32(Math.floor(Math.random() * 0x7fffffff));
-    seedInitialFeed(rnd, 18);
+    seedInitialFeed(rnd);
     setMounted(true);
   }, []);
 
   useEffect(() => subscribeFeed(setEntries), []);
 
-  // Push a new seeded bid every 4–7 s. One shared interval.
+  // Push a new simulated watch event every 5–9 s. One shared interval.
   useEffect(() => {
     if (!mounted) return;
     let timeoutId = 0;
     const tick = () => {
       pushSeededBid(makeSeededBid(Math.random));
-      timeoutId = window.setTimeout(tick, 4000 + Math.random() * 3000);
+      timeoutId = window.setTimeout(tick, 5000 + Math.random() * 4000);
     };
-    timeoutId = window.setTimeout(tick, 4000 + Math.random() * 3000);
+    timeoutId = window.setTimeout(tick, 5000 + Math.random() * 4000);
     return () => window.clearTimeout(timeoutId);
   }, [mounted]);
 
@@ -137,45 +149,52 @@ export function BidTicker() {
     });
   }, [mounted]);
 
+  const latestReal = entries.find((e) => e.signature !== null) ?? null;
+
   return (
     <div
-      className="relative border-b border-[#f0efec] bg-white"
+      className="relative border-t border-hairline"
       onMouseEnter={() => (pausedRef.current = true)}
       onMouseLeave={() => (pausedRef.current = false)}
       onFocusCapture={() => (pausedRef.current = true)}
       onBlurCapture={() => (pausedRef.current = false)}
     >
-      <div className="mx-auto flex max-w-[1500px] items-center gap-3 px-4 py-2 sm:px-6">
-        <div className="flex shrink-0 items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-[#8d8d8d]">
-          <span className="live-dot size-1.5 rounded-full bg-[var(--accent)]" />
-          <span className="hidden sm:inline">Live market activity</span>
-          <span className="sm:hidden">Live</span>
-        </div>
-        <div className="relative min-w-0 flex-1 overflow-hidden">
-          {/* edge fades */}
-          <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-10 bg-gradient-to-r from-white to-transparent" />
-          <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-10 bg-gradient-to-l from-white to-transparent" />
+      <div className="mx-auto flex h-10 max-w-[1320px] items-center px-5 sm:px-8">
+        <span className="shrink-0 pr-5 text-[13px] text-graphite">Market</span>
+        {latestReal ? (
+          <div className="hidden shrink-0 items-center border-l border-hairline lg:flex">
+            <RealChip entry={latestReal} now={now} />
+          </div>
+        ) : null}
+        <div className="relative h-full min-w-0 flex-1 overflow-hidden border-l border-hairline">
+          <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-8 bg-gradient-to-r from-paper to-transparent" />
+          <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-12 bg-gradient-to-l from-paper to-transparent" />
           <div
             ref={trackRef}
-            className="flex items-center gap-2 will-change-transform"
-            aria-label="Recent bids"
+            className="flex h-full items-center will-change-transform"
+            aria-label="Recent market activity"
           >
             {mounted && entries.length ? (
               <>
-                <div ref={copyRef} className="flex shrink-0 items-center gap-2">
+                <div
+                  ref={copyRef}
+                  className="flex shrink-0 items-center divide-x divide-hairline"
+                >
                   {entries.map((e) => (
                     <Chip key={e.id} entry={e} now={now} />
                   ))}
                 </div>
-                <div className="flex shrink-0 items-center gap-2" aria-hidden>
+                <div
+                  className="flex shrink-0 items-center divide-x divide-hairline border-l border-hairline"
+                  aria-hidden
+                  inert
+                >
                   {entries.map((e) => (
                     <Chip key={`dup-${e.id}`} entry={e} now={now} />
                   ))}
                 </div>
               </>
-            ) : (
-              <div className="h-7" />
-            )}
+            ) : null}
           </div>
         </div>
       </div>
