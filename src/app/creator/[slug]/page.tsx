@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { ConversionStat } from "@/components/conversion-stat";
 import { Countdown } from "@/components/countdown";
 import { SiteHeader } from "@/components/site-header";
 import { CREATORS } from "@/data/creators";
@@ -60,25 +61,7 @@ export default async function CreatorPage({ params }: { params: Promise<{ slug: 
               {creator.niche}, {creator.handle}. {creator.followers.toLocaleString("en-US")} followers.
             </p>
 
-            <div className="mt-10 border-t border-ink pt-3">
-              <div className="flex items-baseline justify-between gap-3">
-                <p className="text-[13px] font-medium">Conversion</p>
-                {creator.conversionPct === null ? (
-                  <p className="text-[12px] text-ash">no data yet</p>
-                ) : null}
-              </div>
-              <p
-                className={`mt-1 font-serif text-[56px] leading-none tracking-[-0.02em] ${
-                  creator.conversionPct === null ? "text-[#c9c9c6]" : "text-ink"
-                }`}
-              >
-                {creator.conversionPct !== null ? `${creator.conversionPct.toFixed(1)}%` : "—"}
-              </p>
-              <p className="mt-2 max-w-[48ch] text-[14px] leading-snug text-graphite">
-                Clicks through the winning brand&rsquo;s tracked link, counted on
-                Solana. This is what the slot is priced on, not follower count.
-              </p>
-            </div>
+            <ConversionStat creator={creator.creatorPubkey ?? creator.auctionCreatorPubkey} />
 
             <div className="mt-10 border-t border-hairline pt-4">
               {hasAuction ? (

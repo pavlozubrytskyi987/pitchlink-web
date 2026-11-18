@@ -17,6 +17,7 @@ import { ProofList } from "@/components/chain-status";
 import { SiteHeader } from "@/components/site-header";
 import { subscribeFeed, type BidEntry } from "@/lib/bid-feed";
 import { PROGRAM_ID } from "@/lib/config";
+import { useAllClicks } from "@/lib/use-all-clicks";
 import { useHeroAuction } from "@/lib/use-hero-auction";
 import { observeInView, observeNear } from "@/lib/visibility";
 
@@ -154,6 +155,7 @@ export function LiveBoard({ creators = CREATORS, live }: Props) {
   // devnet auction account. Explicit `live` values from the caller still win.
   const hero = creators.find((c) => c.status === "live");
   const heroChain = useHeroAuction(hero);
+  const clicksByCreator = useAllClicks();
   const liveAll = useMemo(() => {
     if (!hero || !heroChain) return live;
     const lamports = Math.round(heroChain.currentBidSol * 1e9);
@@ -299,19 +301,24 @@ export function LiveBoard({ creators = CREATORS, live }: Props) {
         >
           {sorted.map((creator) => {
             const real = latestReal[creator.slug];
-            const merged: Partial<TileLive> | undefined =
-              real || liveAll?.[creator.slug]
-                ? {
-                    ...(real
-                      ? {
-                          currentBidSol: real.amountSol,
-                          bidSignature: real.signature,
-                          lastBid: { id: 0, amountSol: real.amountSol },
-                        }
-                      : null),
-                    ...liveAll?.[creator.slug],
-                  }
-                : undefined;
+            const pubkey = creator.creatorPubkey ?? creator.auctionCreatorPubkey;
+            const onchainClicks =
+              pubkey && pubkey in clicksByCreator ? clicksByCreator[pubkey] : null;
+            const needsMerge =
+              real || liveAll?.[creator.slug] || onchainClicks !== null;
+            const merged: Partial<TileLive> | undefined = needsMerge
+              ? {
+                  ...(real
+                    ? {
+                        currentBidSol: real.amountSol,
+                        bidSignature: real.signature,
+                        lastBid: { id: 0, amountSol: real.amountSol },
+                      }
+                    : null),
+                  ...liveAll?.[creator.slug],
+                  ...(onchainClicks !== null ? { onchainClicks } : null),
+                }
+              : undefined;
             return (
               <BoardTile
                 key={creator.slug}

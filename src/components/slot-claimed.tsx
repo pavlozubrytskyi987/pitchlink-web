@@ -51,7 +51,7 @@ export function SlotClaimed({
     ).toString();
     // Let the reveal land before the link appears.
     const started = Date.now();
-    getOrMintTrackedLink(claim.auction, destination).then((result) => {
+    getOrMintTrackedLink(claim.auction, destination, claim.creator).then((result) => {
       const wait = Math.max(0, 1700 - (Date.now() - started));
       window.setTimeout(() => {
         if (!alive) return;

@@ -2,12 +2,9 @@
 //
 // The service itself (src/app/api/links, src/app/go/[linkId], src/lib/links.ts)
 // belongs to the click-tracking work. This file only calls its HTTP contract:
-//   POST /api/links { destination } -> { id, shortUrl }
-//   GET  /api/links/:id             -> 200 | 404
-// If that contract changes, this is the one place to update.
-//
-// One link per auction per browser: the id is cached in localStorage and
-// re-minted only if the service no longer knows it.
+//   POST /api/links { destination, creator } -> { id, shortUrl, clicks? }
+//   GET  /api/links/:id                      -> 200 | 404
+// One link per (auction + creator) per browser: id cached in localStorage.
 
 export type TrackedLink = { id: string; url: string };
 
@@ -27,7 +24,7 @@ function writeCache(auction: string, id: string) {
   try {
     localStorage.setItem(cacheKey(auction), id);
   } catch {
-    // Storage refused; the link is still shown for this visit.
+    // Storage refused; the link still shows for this visit.
   }
 }
 
@@ -40,6 +37,7 @@ function toLink(id: string, shortUrl?: string): TrackedLink {
 export async function getOrMintTrackedLink(
   auction: string,
   destination: string,
+  creator: string,
 ): Promise<TrackedLink | null> {
   const cached = readCache(auction);
   if (cached) {
@@ -54,7 +52,7 @@ export async function getOrMintTrackedLink(
     const res = await fetch("/api/links", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ destination }),
+      body: JSON.stringify({ destination, creator }),
     });
     if (!res.ok) return null;
     const body = (await res.json()) as { id?: string; shortUrl?: string };

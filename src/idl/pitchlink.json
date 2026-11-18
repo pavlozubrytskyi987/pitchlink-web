@@ -89,6 +89,127 @@
       "args": []
     },
     {
+      "name": "increment_click",
+      "docs": [
+        "Records one click on a tracked link. Permissionless."
+      ],
+      "discriminator": [
+        189,
+        6,
+        253,
+        63,
+        135,
+        146,
+        88,
+        65
+      ],
+      "accounts": [
+        {
+          "name": "click_counter",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  108,
+                  105,
+                  99,
+                  107,
+                  115
+                ]
+              },
+              {
+                "kind": "arg",
+                "path": "link_id"
+              }
+            ]
+          }
+        },
+        {
+          "name": "clicker",
+          "signer": true
+        }
+      ],
+      "args": [
+        {
+          "name": "link_id",
+          "type": {
+            "array": [
+              "u8",
+              16
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "init_click_counter",
+      "docs": [
+        "Creates the ClickCounter PDA for a tracked link (count = 0)."
+      ],
+      "discriminator": [
+        146,
+        218,
+        148,
+        116,
+        19,
+        197,
+        211,
+        39
+      ],
+      "accounts": [
+        {
+          "name": "click_counter",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  108,
+                  105,
+                  99,
+                  107,
+                  115
+                ]
+              },
+              {
+                "kind": "arg",
+                "path": "link_id"
+              }
+            ]
+          }
+        },
+        {
+          "name": "payer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "link_id",
+          "type": {
+            "array": [
+              "u8",
+              16
+            ]
+          }
+        },
+        {
+          "name": "creator",
+          "type": "pubkey"
+        }
+      ]
+    },
+    {
       "name": "initialize_auction",
       "docs": [
         "Creator opens their ad-slot auction."
@@ -362,6 +483,19 @@
         131,
         81
       ]
+    },
+    {
+      "name": "ClickCounter",
+      "discriminator": [
+        241,
+        48,
+        60,
+        127,
+        219,
+        147,
+        20,
+        167
+      ]
     }
   ],
   "events": [
@@ -376,6 +510,19 @@
         69,
         108,
         61
+      ]
+    },
+    {
+      "name": "ClickRecorded",
+      "discriminator": [
+        46,
+        88,
+        140,
+        247,
+        34,
+        42,
+        108,
+        98
       ]
     },
     {
@@ -442,6 +589,11 @@
       "code": 6009,
       "name": "Overflow",
       "msg": "Arithmetic overflow"
+    },
+    {
+      "code": 6010,
+      "name": "InvalidLinkId",
+      "msg": "Link id must not be all zero bytes"
     }
   ],
   "types": [
@@ -515,6 +667,84 @@
           },
           {
             "name": "amount",
+            "type": "u64"
+          },
+          {
+            "name": "ts",
+            "type": "i64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "ClickCounter",
+      "docs": [
+        "On-chain click counter for one tracked link.",
+        "",
+        "Fully independent of the auction accounts: no payment, escrow, or auction",
+        "logic touches this account.",
+        "",
+        "PDA seeds: [b\"clicks\", link_id]"
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "link_id",
+            "docs": [
+              "Fixed-length identifier of the tracked link (zero-padded UTF-8)."
+            ],
+            "type": {
+              "array": [
+                "u8",
+                16
+              ]
+            }
+          },
+          {
+            "name": "count",
+            "docs": [
+              "Total clicks recorded for this link."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "creator",
+            "docs": [
+              "Creator the link credits (who the conversion belongs to)."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "bump",
+            "docs": [
+              "Cached bump for the click counter PDA."
+            ],
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "ClickRecorded",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "link_id",
+            "type": {
+              "array": [
+                "u8",
+                16
+              ]
+            }
+          },
+          {
+            "name": "creator",
+            "type": "pubkey"
+          },
+          {
+            "name": "count",
             "type": "u64"
           },
           {

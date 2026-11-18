@@ -17,6 +17,8 @@ export type TileLive = {
   lastBid: { id: number; amountSol: number } | null;
   /** Devnet tx signature of the latest on-chain bid; absent for seeded data. */
   bidSignature?: string | null;
+  /** Real on-chain click count for this creator's tracked links; null = no data. */
+  onchainClicks?: number | null;
   /** Devnet auction account (PDA) backing this tile, when it is real. */
   auctionAddress?: string | null;
   /** True once the on-chain auction has paid out. */
@@ -398,26 +400,26 @@ function CreatorTileImpl({
           {realMedia ? `${creator.niche}, ${creator.handle}` : creator.handle}
         </p>
 
-        {/* Conversion slot: fills with real on-chain click-counter data.
-            Until then, a muted placeholder instead of invented numbers. */}
+        {/* Conversion slot: integer click count from the on-chain ClickCounter
+            PDA, live via the clickRecorded event (via live.onchainClicks). */}
         <div
           className="conv-slot mt-5 border-t border-ink pt-3"
-          data-empty={creator.conversionPct === null}
+          data-empty={live.onchainClicks == null || live.onchainClicks === 0}
         >
           <div className="flex items-baseline justify-between gap-2">
-            <p className={LABEL}>Conversion</p>
+            <p className={LABEL}>Clicks on-chain</p>
             <p className="text-[9px] font-medium uppercase tracking-[0.14em] text-[#c4c1ba]">
-              no data yet
+              {live.onchainClicks == null ? "no link yet" : "live"}
             </p>
           </div>
           <p className="mt-0.5 text-[17px] font-semibold leading-none tracking-normal text-[#b3b0aa] sm:text-[19px]">
-            {creator.conversionPct !== null
-              ? `${creator.conversionPct.toFixed(1)}%`
-              : "—"}
+            {live.onchainClicks == null
+              ? "—"
+              : live.onchainClicks.toLocaleString("en-US")}
           </p>
         </div>
         <p className="mt-2 text-[12.5px] leading-snug text-ash">
-          Clicks through the winner&rsquo;s tracked link, counted on Solana.
+          Verified clicks through this creator&rsquo;s tracked link, counted on Solana.
         </p>
 
         <div className="mt-5">

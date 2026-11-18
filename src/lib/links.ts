@@ -1,73 +1,89 @@
-import { randomBytes } from "crypto";
+// Tracked-link store. Each link maps a short id -> destination + creator
+// (whose on-chain conversion this link credits). Local JSON cache at
+// .pitchlink/links.json for dev persistence; the SOURCE OF TRUTH for the
+// click count is the on-chain ClickCounter PDA. This file holds no counts.
+//
+// Server-only: links are minted from an API route and read from server
+// routes. Clients ask /api/links/:id (list/read) or hit /go/:id to click.
+
+import "server-only";
+
+import { randomBytes } from "node:crypto";
+import fs from "node:fs";
+import path from "node:path";
 
 export interface TrackedLink {
   id: string;
+  /** Where visitors are sent (http/https). */
   destination: string;
-  clicks: number;
+  /** Creator (base58) whose on-chain conversion this link credits. */
+  creator: string;
   createdAt: string;
 }
 
-// In-memory store for the cloak MVP.
-// TODO: replace with persistent DB (or on-chain program state) once integrated.
-const links = new Map<string, TrackedLink>();
-
+// Short ids only. The on-chain ClickCounter PDA is seeded by this id
+// zero-padded to 16 bytes (program.ts::linkIdBytes), so keep ids compact.
+const ID_LEN = 8;
 const ALPHABET =
   "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
-function nanoid(size = 8): string {
+const STORE_DIR = path.resolve(process.cwd(), ".pitchlink");
+const STORE_PATH = path.join(STORE_DIR, "links.json");
+
+let links: Map<string, TrackedLink> | null = null;
+
+function load(): Map<string, TrackedLink> {
+  if (links) return links;
+  links = new Map();
+  try {
+    const raw = fs.readFileSync(STORE_PATH, "utf8");
+    const rows = JSON.parse(raw) as TrackedLink[];
+    for (const row of rows) links.set(row.id, row);
+  } catch {
+    // First run or unreadable; start fresh.
+  }
+  return links;
+}
+
+function flush() {
+  if (!links) return;
+  try {
+    fs.mkdirSync(STORE_DIR, { recursive: true });
+    fs.writeFileSync(STORE_PATH, JSON.stringify([...links.values()], null, 2));
+  } catch (error) {
+    console.warn("[pitchlink] could not persist link store", error);
+  }
+}
+
+function nanoid(size = ID_LEN): string {
   const bytes = randomBytes(size);
   let id = "";
-  for (let i = 0; i < size; i++) {
-    id += ALPHABET[bytes[i] % ALPHABET.length];
-  }
+  for (let i = 0; i < size; i++) id += ALPHABET[bytes[i] % ALPHABET.length];
   return id;
 }
 
-export function createLink(destination: string): TrackedLink {
+export function createLink(destination: string, creator: string): TrackedLink {
+  const store = load();
   let id = nanoid();
-  while (links.has(id)) {
-    id = nanoid();
-  }
+  while (store.has(id)) id = nanoid();
 
   const link: TrackedLink = {
     id,
     destination,
-    clicks: 0,
+    creator,
     createdAt: new Date().toISOString(),
   };
-
-  links.set(id, link);
+  store.set(id, link);
+  flush();
   return link;
 }
 
 export function getLink(id: string): TrackedLink | undefined {
-  return links.get(id);
+  return load().get(id);
 }
 
 export function listLinks(): TrackedLink[] {
-  return Array.from(links.values()).sort(
-    (a, b) =>
-      new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+  return [...load().values()].sort(
+    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
   );
-}
-
-export async function recordClick(id: string): Promise<TrackedLink | undefined> {
-  const link = links.get(id);
-  if (!link) return undefined;
-
-  link.clicks += 1;
-
-  // TODO: on-chain click-increment call goes here.
-  // Example (tomorrow):
-  // await program.methods.click(link.id).accounts({ ... }).rpc();
-  // Keep the above async so the redirect is not blocked.
-
-  console.log(`[cloak] click recorded`, {
-    id: link.id,
-    destination: link.destination,
-    clicks: link.clicks,
-    ts: new Date().toISOString(),
-  });
-
-  return link;
 }

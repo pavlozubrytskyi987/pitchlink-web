@@ -277,3 +277,135 @@ function readOnlyWallet(): PitchlinkWallet {
     },
   };
 }
+
+// ---- click tracking --------------------------------------------------------
+
+export const LINK_ID_LEN = 16;
+const CLICKS_SEED = Buffer.from("clicks");
+
+/** Pack a short id into the fixed 16-byte array the program expects. */
+export function linkIdBytes(linkId: string): number[] {
+  const buf = Buffer.alloc(LINK_ID_LEN);
+  const utf8 = Buffer.from(linkId, "utf8");
+  if (utf8.length > LINK_ID_LEN) {
+    throw new Error(`linkId too long (${utf8.length} > ${LINK_ID_LEN})`);
+  }
+  utf8.copy(buf, 0);
+  return Array.from(buf);
+}
+
+export function clickCounterPda(linkId: string): PublicKey {
+  return PublicKey.findProgramAddressSync(
+    [CLICKS_SEED, Buffer.from(linkIdBytes(linkId))],
+    PROGRAM_PUBKEY,
+  )[0];
+}
+
+export type ClickCounter = {
+  linkId: string;
+  rawLinkId: number[];
+  count: bigint;
+  creator: PublicKey;
+};
+
+type RawClickCounter = {
+  linkId: number[];
+  count: BN;
+  creator: PublicKey;
+  bump: number;
+};
+
+function clickCounterClient(program: Program<Idl>) {
+  return (
+    program.account as unknown as {
+      clickCounter: {
+        fetch(address: PublicKey): Promise<RawClickCounter>;
+        fetchNullable(address: PublicKey): Promise<RawClickCounter | null>;
+      };
+    }
+  ).clickCounter;
+}
+
+function unpackLinkId(raw: number[]): string {
+  const bytes = Buffer.from(raw);
+  // Trim trailing NULs so "abc\0\0..." reads as "abc".
+  let end = bytes.length;
+  while (end > 0 && bytes[end - 1] === 0) end -= 1;
+  return bytes.slice(0, end).toString("utf8");
+}
+
+export async function getClickCounter(
+  connection: Connection,
+  linkId: string,
+): Promise<ClickCounter | null> {
+  const program = getPitchlinkProgram(connection);
+  const address = clickCounterPda(linkId);
+  const account = await clickCounterClient(program).fetchNullable(address);
+  if (!account) return null;
+  return {
+    linkId: unpackLinkId(account.linkId),
+    rawLinkId: account.linkId,
+    count: BigInt(account.count.toString()),
+    creator: account.creator,
+  };
+}
+
+export async function initClickCounter(
+  connection: Connection,
+  relayer: PitchlinkWallet,
+  linkId: string,
+  creator: PublicKey,
+): Promise<string> {
+  const program = getPitchlinkProgram(connection, relayer);
+  const clickCounter = clickCounterPda(linkId);
+  return program.methods
+    .initClickCounter(linkIdBytes(linkId), creator)
+    .accounts({
+      clickCounter,
+      payer: relayer.publicKey,
+      systemProgram: SystemProgram.programId,
+    })
+    .rpc();
+}
+
+export async function incrementClick(
+  connection: Connection,
+  relayer: PitchlinkWallet,
+  linkId: string,
+): Promise<string> {
+  const program = getPitchlinkProgram(connection, relayer);
+  const clickCounter = clickCounterPda(linkId);
+  return program.methods
+    .incrementClick(linkIdBytes(linkId))
+    .accounts({
+      clickCounter,
+      clicker: relayer.publicKey,
+    })
+    .rpc();
+}
+
+/** Subscribe to the on-chain ClickRecorded event (returns an unsubscribe fn). */
+export function watchClickEvents(
+  connection: Connection,
+  onClick: (ev: { linkId: string; creator: PublicKey; count: bigint; ts: number }) => void,
+): () => void {
+  const program = getPitchlinkProgram(connection);
+  // Narrow the arg so the handler can read event fields.
+  type ClickRecordedEvent = {
+    linkId: number[];
+    creator: PublicKey;
+    count: BN;
+    ts: BN;
+  };
+  const id = program.addEventListener("clickRecorded", (ev: ClickRecordedEvent) => {
+    onClick({
+      linkId: unpackLinkId(ev.linkId),
+      creator: ev.creator,
+      count: BigInt(ev.count.toString()),
+      ts: Number(ev.ts),
+    });
+  });
+  return () => {
+    void program.removeEventListener(id);
+  };
+}

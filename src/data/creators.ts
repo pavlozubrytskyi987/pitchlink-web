@@ -23,6 +23,8 @@ export type Creator = {
   conversionPct: number | null;
   momentum: number[]; // ~30 daily points
   trendPct: number;
+  /** Wallet that identifies this creator on-chain. Same key signs the auction PDA. */
+  creatorPubkey: string | null;
   auctionCreatorPubkey: string | null;
   nextVideoAt: number; // unix seconds
   status: "live" | "soon"; // hero tile is "live" and shows a real auction UI
@@ -255,6 +257,7 @@ export const CREATORS: Creator[] = SEEDS.map((s) => ({
   conversionPct: null, // no on-chain click data yet — placeholder renders
   momentum: seededMomentum(s.momentumSeed, s.startViews, s.endMult),
   trendPct: 0,
+  creatorPubkey: s.hero ? HERO_CREATOR_PUBKEY : null,
   auctionCreatorPubkey: s.hero ? HERO_CREATOR_PUBKEY : null,
   nextVideoAt: NOW + s.daysUntilVideo * DAY + (s.momentumSeed % 19) * 1800,
   status: s.hero ? "live" : "soon",
