@@ -1,26 +1,99 @@
 @import "tailwindcss";
 
+/* ---- design tokens ------------------------------------------------------
+   One dark system for every page. Tailwind reads these as colors/fonts, so
+   `bg-raised`, `text-fg-2`, `border-line`, `text-live` etc. all exist. */
+@theme {
+  --color-canvas: #07080a;
+  --color-raised: #0e1013;
+  --color-panel: #14171c;
+  --color-panel-2: #1b1f26;
+  --color-line: rgb(255 255 255 / 0.075);
+  --color-line-strong: rgb(255 255 255 / 0.14);
+  --color-fg: #eef0f3;
+  --color-fg-2: #a3a8b1;
+  --color-fg-3: #6c727c;
+  /* live / verified / conversion */
+  --color-live: #14f195;
+  --color-live-ink: #3df5a8;
+  /* chain proof (Solana purple) */
+  --color-chain: #a87bff;
+  --color-alert: #ff5d5d;
+
+  --font-sans:
+    ui-sans-serif, system-ui, -apple-system, "SF Pro Text", "Segoe UI",
+    Roboto, sans-serif;
+  --font-mono:
+    ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
+}
+
+:root {
+  color-scheme: dark;
+  /* Older components read these two directly. */
+  --accent: var(--color-live);
+  --accent-ink: var(--color-live-ink);
+}
+
 html,
 body {
-  background: #ffffff;
-  color: #1c1c1c;
+  background: var(--color-canvas);
+  color: var(--color-fg);
 }
 
 body {
-  font-family:
-    ui-sans-serif,
-    system-ui,
-    -apple-system,
-    "Segoe UI",
-    sans-serif;
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: clip;
+}
+
+::selection {
+  background: rgb(20 241 149 / 0.3);
+  color: #fff;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-live);
+  outline-offset: 2px;
+}
+
+/* ---- conversion slot ----------------------------------------------------
+   The value inside .conv-slot is bound by the click-counter wiring. It is
+   styled from here (unlayered, so it beats utility classes) so that line
+   never has to change for visual reasons. */
+.conv-slot > div:first-child > p:first-child {
+  color: var(--color-live-ink);
+  font-size: 10px;
+  font-weight: 650;
+  letter-spacing: 0.14em;
+}
+.conv-slot > div:first-child > p:last-child {
+  border: 1px solid var(--color-line-strong);
+  border-radius: 999px;
+  padding: 2px 6px;
+  font-size: 8.5px;
+  line-height: 1.2;
+  color: var(--color-fg-3);
+}
+.conv-slot > p {
+  margin-top: 6px;
+  font-size: 30px;
+  font-weight: 650;
+  line-height: 1;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-fg);
+}
+.conv-slot[data-empty="true"] > p {
+  color: rgb(238 240 243 / 0.32);
+}
+@media (min-width: 640px) {
+  .conv-slot > p {
+    font-size: 34px;
+  }
 }
 
 /* ---- live board ---- */
-:root {
-  --accent: #16c45b;
-  --accent-ink: #0b8f3f;
-}
-
 .spark-svg {
   -webkit-mask-image: linear-gradient(to right, transparent, #000 14%);
   mask-image: linear-gradient(to right, transparent, #000 14%);
@@ -32,8 +105,8 @@ body {
   border-radius: 999px;
   background: var(--accent);
   box-shadow:
-    0 0 0 3px rgb(22 196 91 / 0.2),
-    0 0 10px 1px rgb(22 196 91 / 0.45);
+    0 0 0 3px rgb(20 241 149 / 0.18),
+    0 0 10px 1px rgb(20 241 149 / 0.5);
   will-change: transform;
 }
 .spark-reveal {
@@ -63,12 +136,12 @@ body {
 @keyframes live-badge-glow {
   0%,
   100% {
-    box-shadow: 0 2px 10px rgb(22 196 91 / 0.55);
+    box-shadow: 0 0 12px rgb(20 241 149 / 0.35);
   }
   50% {
     box-shadow:
-      0 2px 14px rgb(22 196 91 / 0.85),
-      0 0 0 4px rgb(22 196 91 / 0.18);
+      0 0 18px rgb(20 241 149 / 0.6),
+      0 0 0 4px rgb(20 241 149 / 0.14);
   }
 }
 
@@ -91,7 +164,7 @@ body {
 }
 
 .countdown-live[data-urgent="1"] {
-  color: #d93025;
+  color: var(--color-alert);
 }
 
 .bid-flash {
@@ -115,12 +188,12 @@ body {
 @keyframes tile-bid-ring {
   0% {
     box-shadow:
-      inset 0 0 0 2px var(--accent),
-      0 0 0 6px rgb(22 196 91 / 0.18);
+      inset 0 0 0 1.5px var(--accent),
+      0 0 0 6px rgb(20 241 149 / 0.16);
   }
   100% {
     box-shadow:
-      inset 0 0 0 2px transparent,
+      inset 0 0 0 1.5px transparent,
       0 0 0 6px transparent;
   }
 }
@@ -140,33 +213,55 @@ body {
   }
 }
 
+/* ---- wallet adapter ---- */
 .wallet-adapter-button {
-  height: 38px;
+  height: 36px;
   border-radius: 999px;
-  background: #161616;
-  color: #ffffff;
+  background: var(--color-fg);
+  color: var(--color-canvas);
   font-family: inherit;
-  font-size: 14px;
-  font-weight: 560;
-  line-height: 38px;
-  padding: 0 16px;
+  font-size: 13.5px;
+  font-weight: 600;
+  line-height: 36px;
+  padding: 0 14px;
+  transition: background-color 150ms ease;
 }
-
-.wallet-adapter-button:hover {
-  background: #2a2a2a;
-}
-
-.wallet-adapter-modal-wrapper {
+.wallet-adapter-button:not([disabled]):hover {
   background: #ffffff;
-  color: #1c1c1c;
-  border-radius: 16px;
 }
-
+.wallet-adapter-button-start-icon {
+  width: 18px;
+  height: 18px;
+  margin-right: 8px;
+}
+.wallet-adapter-dropdown-list {
+  background: var(--color-panel);
+  border: 1px solid var(--color-line-strong);
+  border-radius: 14px;
+}
+.wallet-adapter-dropdown-list-item:not([disabled]):hover {
+  background: var(--color-panel-2);
+}
+.wallet-adapter-modal-wrapper {
+  background: var(--color-panel);
+  border: 1px solid var(--color-line-strong);
+  border-radius: 18px;
+  font-family: inherit;
+}
 .wallet-adapter-modal-title {
-  color: #1c1c1c;
+  color: var(--color-fg);
   font-weight: 600;
 }
-
 .wallet-adapter-modal-button-close {
-  background: #f3f2ef;
+  background: var(--color-panel-2);
+}
+.wallet-adapter-modal-list .wallet-adapter-button {
+  height: 52px;
+  line-height: 52px;
+  border-radius: 12px;
+  background: transparent;
+  color: var(--color-fg);
+}
+.wallet-adapter-modal-list .wallet-adapter-button:not([disabled]):hover {
+  background: var(--color-panel-2);
 }

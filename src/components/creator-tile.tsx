@@ -29,8 +29,8 @@ type Props = {
 };
 
 const SPARK_W = 100;
-const SPARK_H = 46;
-const SPARK_PAD = 5;
+const SPARK_H = 30;
+const SPARK_PAD = 4;
 const STEP_MS = 1600;
 
 function hashString(s: string): number {
@@ -153,9 +153,110 @@ function compact(n: number): string {
 }
 
 const LABEL =
-  "text-[9px] font-medium uppercase tracking-[0.14em] text-[#a09d96]";
+  "text-[9px] font-medium uppercase tracking-[0.14em] text-fg-3";
 const CHIP =
-  "rounded-full bg-white/90 px-2 py-1 text-[10px] font-semibold backdrop-blur-sm";
+  "rounded-full bg-black/55 px-2 py-1 text-[10px] font-semibold text-white/85 ring-1 ring-white/10 backdrop-blur-md";
+
+type SparkInit = ReturnType<typeof staticSpark>;
+
+function ChainIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 16 16" fill="none" aria-hidden className={className}>
+      <path
+        d="M6.6 9.4a2.6 2.6 0 0 0 3.7 0l2.2-2.2a2.6 2.6 0 0 0-3.7-3.7l-.7.7M9.4 6.6a2.6 2.6 0 0 0-3.7 0L3.5 8.8a2.6 2.6 0 0 0 3.7 3.7l.7-.7"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
+/** Simulated views/day line. The tile's rAF loop writes into these refs. */
+function Sparkline({
+  slug,
+  initial,
+  initialHead,
+  animate,
+  lineRef,
+  areaRef,
+  dotRef,
+  headRef,
+}: {
+  slug: string;
+  initial: SparkInit;
+  initialHead: number;
+  animate: boolean;
+  lineRef: React.RefObject<SVGPathElement | null>;
+  areaRef: React.RefObject<SVGPathElement | null>;
+  dotRef: React.RefObject<HTMLSpanElement | null>;
+  headRef: React.RefObject<HTMLSpanElement | null>;
+}) {
+  const gradientId = `spark-fill-${slug}`;
+  return (
+    <div>
+      <div className="mb-0.5 flex items-baseline justify-between gap-2">
+        <p className={LABEL}>Views / day · 30d</p>
+        <p className="text-[10.5px] font-medium tabular-nums text-fg-2">
+          <span ref={headRef} suppressHydrationWarning>
+            {compact(initialHead)}
+          </span>
+        </p>
+      </div>
+      <div
+        className={`relative ${animate ? "spark-reveal" : ""}`}
+        style={{ height: SPARK_H }}
+      >
+        <svg
+          viewBox={`0 0 ${SPARK_W} ${SPARK_H}`}
+          preserveAspectRatio="none"
+          aria-hidden
+          className="spark-svg block size-full overflow-hidden"
+        >
+          <defs>
+            <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stopColor="var(--accent)" stopOpacity="0.14" />
+              <stop offset="1" stopColor="var(--accent)" stopOpacity="0" />
+            </linearGradient>
+          </defs>
+          {[1 / 3, 2 / 3].map((f) => (
+            <line
+              key={f}
+              x1="0"
+              x2={SPARK_W}
+              y1={SPARK_H * f}
+              y2={SPARK_H * f}
+              stroke="#ffffff"
+              strokeOpacity="0.06"
+              strokeDasharray="2 3"
+              vectorEffect="non-scaling-stroke"
+            />
+          ))}
+          <path ref={areaRef} d={initial.area} fill={`url(#${gradientId})`} />
+          <path
+            ref={lineRef}
+            d={initial.line}
+            fill="none"
+            stroke="var(--accent)"
+            strokeOpacity="0.85"
+            strokeWidth="1.5"
+            strokeLinejoin="round"
+            strokeLinecap="round"
+            vectorEffect="non-scaling-stroke"
+          />
+        </svg>
+        <span
+          ref={dotRef}
+          aria-hidden
+          className="spark-dot absolute right-0 top-0"
+          style={{
+            transform: `translate3d(0,${initial.headY.toFixed(2)}px,0)`,
+          }}
+        />
+      </div>
+    </div>
+  );
+}
 
 function CreatorTileImpl({
   creator,
@@ -260,19 +361,23 @@ function CreatorTileImpl({
     live.currentBidSol,
   ]);
 
-  const gradientId = `spark-fill-${creator.slug}`;
-
   return (
-    <article className="tile group relative flex flex-col rounded-[20px] border border-[#e9e7e2] bg-[#f5f4f2] p-1.5 text-[#1c1c1c] transition-[transform,border-color,box-shadow] duration-300 ease-out hover:-translate-y-1 hover:border-[#d9d6cf] hover:shadow-[0_16px_36px_rgba(28,28,28,0.12)] motion-reduce:transition-none motion-reduce:hover:translate-y-0">
+    <article
+      className={`tile group relative flex flex-col rounded-[18px] border p-1.5 text-fg transition-[transform,border-color,box-shadow] duration-300 ease-out hover:-translate-y-0.5 motion-reduce:transition-none motion-reduce:hover:translate-y-0 ${
+        isLive
+          ? "border-live/30 bg-raised shadow-[0_0_0_1px_rgb(20_241_149/0.06),0_24px_60px_-28px_rgb(20_241_149/0.45)] hover:border-live/50"
+          : "border-line bg-raised hover:border-line-strong hover:shadow-[0_20px_44px_-18px_rgb(0_0_0/0.8)]"
+      }`}
+    >
       {live.lastBid ? (
         <span
           key={live.lastBid.id}
           aria-hidden
-          className="tile-bid-ring pointer-events-none absolute -inset-px z-10 rounded-[20px]"
+          className="tile-bid-ring pointer-events-none absolute -inset-px z-10 rounded-[18px]"
         />
       ) : null}
 
-      <div className="relative isolate aspect-[4/5] overflow-hidden rounded-[14px] bg-[#e6e4df]">
+      <div className="relative isolate aspect-[5/4] overflow-hidden rounded-[13px] bg-panel">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={creator.posterUrl}
@@ -280,7 +385,7 @@ function CreatorTileImpl({
           loading="lazy"
           decoding="async"
           onError={(e) => (e.currentTarget.style.visibility = "hidden")}
-          className="absolute inset-0 -z-10 size-full object-cover"
+          className="absolute inset-0 -z-10 size-full object-cover object-[50%_22%]"
         />
         {mountVideo ? (
           <video
@@ -296,118 +401,56 @@ function CreatorTileImpl({
             onPlaying={() => setVideoOn(true)}
             onPause={() => setVideoOn(false)}
             onError={() => setVideoOn(false)}
-            className={`absolute inset-0 -z-10 size-full object-cover transition-opacity duration-500 ${videoOn ? "opacity-100" : "opacity-0"}`}
+            className={`absolute inset-0 -z-10 size-full object-cover object-[50%_22%] transition-opacity duration-500 ${videoOn ? "opacity-100" : "opacity-0"}`}
           />
         ) : null}
+        {/* Bottom scrim keeps the chips and clip legible on bright posters. */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 -z-[5] bg-gradient-to-b from-black/35 via-transparent to-black/25"
+        />
         <div className="flex items-center justify-between gap-2 p-2">
           {isLive ? (
-            <span className="live-badge flex items-center gap-1.5 rounded-full bg-[var(--accent)] px-2 py-1 text-[10px] font-semibold tracking-[0.12em] text-white shadow-[0_2px_10px_rgba(22,196,91,0.55)]">
-              <span className="live-dot size-1.5 rounded-full bg-white" />
-              LIVE
+            <span className="live-badge flex items-center gap-1.5 rounded-full bg-live px-2 py-1 text-[10px] font-bold tracking-[0.12em] text-canvas">
+              <span className="live-dot size-1.5 rounded-full bg-canvas" />
+              LIVE AUCTION
             </span>
           ) : (
-            <span className={`${CHIP} tracking-[0.1em] text-[#8d8d8d]`}>
-              SOON
-            </span>
+            <span className={`${CHIP} tracking-[0.1em]`}>SOON</span>
           )}
           <span
-            className={`${CHIP} text-[11px] tabular-nums ${creator.trendPct < 0 ? "text-[#c4320a]" : "text-[var(--accent-ink)]"}`}
+            className={`${CHIP} text-[10.5px] tabular-nums ${creator.trendPct < 0 ? "!text-alert" : "!text-live-ink"}`}
+            title="Views / day, 30-day trend"
           >
             {creator.trendPct < 0 ? "▼" : "▲"} {Math.abs(creator.trendPct)}%
           </span>
         </div>
       </div>
 
-      <div className="flex min-w-0 flex-col gap-1.5 px-0.5 pb-1 pt-2 sm:gap-2 sm:px-1">
+      <div className="flex min-w-0 flex-col gap-2 px-0.5 pb-1 pt-2.5 sm:gap-2.5 sm:px-1">
         <div className="flex min-w-0 items-center gap-2">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={creator.avatarUrl}
             alt=""
-            className="size-7 shrink-0 rounded-full sm:size-8"
+            className="size-7 shrink-0 rounded-full ring-1 ring-white/10 sm:size-8"
           />
           <div className="min-w-0">
-            <p className="truncate text-[13px] font-semibold leading-tight sm:text-sm">
+            <p className="truncate text-[13px] font-semibold leading-tight tracking-[-0.01em] sm:text-[14px]">
               {creator.name}
             </p>
-            <p className="truncate text-[11px] leading-tight text-[#8d8d8d]">
+            <p className="truncate text-[11px] leading-tight text-fg-3">
               {creator.niche} · {compact(creator.followers)} followers
             </p>
           </div>
         </div>
 
-        <div>
-          <div className="mb-1 flex items-baseline justify-between gap-2">
-            <p className={LABEL}>Views / day · 30d</p>
-            <p className="text-[11px] font-semibold tabular-nums">
-              <span ref={headRef} suppressHydrationWarning>
-                {compact(creator.momentum[creator.momentum.length - 1])}
-              </span>
-            </p>
-          </div>
-          <div
-            className={`relative ${animate ? "spark-reveal" : ""}`}
-            style={{ height: SPARK_H }}
-          >
-            <svg
-              viewBox={`0 0 ${SPARK_W} ${SPARK_H}`}
-              preserveAspectRatio="none"
-              aria-hidden
-              className="spark-svg block size-full overflow-hidden"
-            >
-              <defs>
-                <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
-                  <stop
-                    offset="0"
-                    stopColor="var(--accent)"
-                    stopOpacity="0.16"
-                  />
-                  <stop offset="1" stopColor="var(--accent)" stopOpacity="0" />
-                </linearGradient>
-              </defs>
-              {[1 / 3, 2 / 3].map((f) => (
-                <line
-                  key={f}
-                  x1="0"
-                  x2={SPARK_W}
-                  y1={SPARK_H * f}
-                  y2={SPARK_H * f}
-                  stroke="#1c1c1c"
-                  strokeOpacity="0.07"
-                  strokeDasharray="2 3"
-                  vectorEffect="non-scaling-stroke"
-                />
-              ))}
-              <path
-                ref={areaRef}
-                d={initial.area}
-                fill={`url(#${gradientId})`}
-              />
-              <path
-                ref={lineRef}
-                d={initial.line}
-                fill="none"
-                stroke="var(--accent)"
-                strokeWidth="1.75"
-                strokeLinejoin="round"
-                strokeLinecap="round"
-                vectorEffect="non-scaling-stroke"
-              />
-            </svg>
-            <span
-              ref={dotRef}
-              aria-hidden
-              className="spark-dot absolute right-0 top-0"
-              style={{
-                transform: `translate3d(0,${initial.headY.toFixed(2)}px,0)`,
-              }}
-            />
-          </div>
-        </div>
-
         {/* Conversion slot: fills with real on-chain click-counter data.
             Until then, a muted placeholder instead of invented numbers. */}
-        <div>
+        <div
+          className="conv-slot rounded-t-[12px] border border-b-0 border-live/20 bg-gradient-to-b from-live/[0.08] to-live/[0.02] px-2.5 pb-2 pt-2"
+          data-empty={creator.conversionPct === null}
+        >
           <div className="flex items-baseline justify-between gap-2">
             <p className={LABEL}>Conversion</p>
             <p className="text-[9px] font-medium uppercase tracking-[0.14em] text-[#c4c1ba]">
@@ -420,27 +463,42 @@ function CreatorTileImpl({
               : "—"}
           </p>
         </div>
+        <p className="-mt-2 flex items-center gap-1.5 rounded-b-[12px] border border-t-0 border-live/20 bg-live/[0.03] px-2.5 pb-1.5 pt-1 text-[10px] leading-tight text-fg-3 sm:-mt-2.5">
+          <ChainIcon className="size-3 shrink-0 text-live/70" />
+          <span className="truncate">
+            Tracked clicks on Solana, not followers
+          </span>
+        </p>
+
+        <Sparkline
+          slug={creator.slug}
+          initial={initial}
+          initialHead={creator.momentum[creator.momentum.length - 1]}
+          animate={animate}
+          lineRef={lineRef}
+          areaRef={areaRef}
+          dotRef={dotRef}
+          headRef={headRef}
+        />
 
         {isLive ? (
-          <div className="rounded-[12px] border border-[var(--accent)]/30 bg-white/70 p-2 sm:p-2.5">
+          <div className="rounded-[12px] border border-line bg-panel p-2 sm:p-2.5">
             <div className="flex items-baseline justify-between gap-2">
               <p className={LABEL}>Current bid</p>
               <p className={LABEL}>Ends in</p>
             </div>
-            <div className="mt-0.5 flex items-baseline justify-between gap-2">
+            <div className="mt-1 flex items-baseline justify-between gap-2">
               <p
-                className={`text-[20px] font-semibold tabular-nums tracking-tight sm:text-[22px] ${live.lastBid ? "bid-pop" : ""}`}
+                className={`text-[19px] font-semibold tabular-nums tracking-[-0.02em] sm:text-[22px] ${live.lastBid ? "bid-pop" : ""}`}
                 key={live.lastBid?.id ?? "initial"}
               >
                 <span ref={bidRef} suppressHydrationWarning>
                   {formatSol(live.currentBidSol ?? 0)}
                 </span>{" "}
-                <span className="text-[13px] font-medium text-[#8d8d8d]">
-                  SOL
-                </span>
+                <span className="text-[12px] font-medium text-fg-3">SOL</span>
               </p>
               <p
-                className="text-[13px] font-semibold tabular-nums countdown-live"
+                className="font-mono text-[12px] font-medium tabular-nums text-fg-2 countdown-live"
                 data-urgent-color
               >
                 <span ref={countdownRef} suppressHydrationWarning>
@@ -454,21 +512,21 @@ function CreatorTileImpl({
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={(e) => e.stopPropagation()}
-                className="mt-0.5 inline-flex items-center gap-1 text-[11px] font-medium text-[var(--accent-ink)] hover:underline"
+                className="mt-0.5 inline-flex items-center gap-1 text-[11px] font-medium text-live-ink hover:underline"
               >
                 view on Explorer ↗
               </a>
             ) : null}
             <Link
               href={`/creator/${creator.slug}`}
-              className="mt-2 flex h-[34px] items-center justify-center rounded-full bg-[#161616] text-[12px] font-semibold text-white transition-colors hover:bg-[#2a2a2a]"
+              className="mt-2 flex h-[34px] items-center justify-center rounded-full bg-live text-[12.5px] font-semibold text-canvas transition-[background-color,transform] hover:bg-live-ink active:scale-[0.98]"
             >
               Place bid
             </Link>
-            <div className="mt-1.5 flex items-center gap-1.5 text-[11px] text-[#8d8d8d]">
-              <span className="live-dot size-1.5 shrink-0 rounded-full bg-[var(--accent)]" />
+            <div className="mt-1.5 flex items-center gap-1.5 text-[11px] text-fg-3">
+              <span className="live-dot size-1.5 shrink-0 rounded-full bg-live" />
               <span className="truncate">
-                <span className="tabular-nums text-[#1c1c1c]">
+                <span className="tabular-nums text-fg-2">
                   {live.watchers}
                 </span>{" "}
                 brands watching
@@ -477,16 +535,16 @@ function CreatorTileImpl({
           </div>
         ) : (
           <>
-            <div className="flex items-end justify-between gap-2 border-t border-[#e6e4df] pt-2">
+            <div className="flex items-end justify-between gap-2 border-t border-line pt-2">
               <div className="min-w-0">
                 <p className={LABEL}>Auction</p>
-                <p className="truncate text-[12px] font-semibold tabular-nums sm:text-[13px]">
+                <p className="truncate text-[12px] font-semibold text-fg-2 sm:text-[13px]">
                   Opens soon
                 </p>
               </div>
               <div className="shrink-0 text-right">
                 <p className={LABEL}>Next video</p>
-                <p className="text-[12px] font-semibold tabular-nums sm:text-[13px]">
+                <p className="font-mono text-[11.5px] font-medium tabular-nums text-fg-2 sm:text-[12px]">
                   <span ref={countdownRef} suppressHydrationWarning>
                     --:--:--
                   </span>
@@ -494,10 +552,10 @@ function CreatorTileImpl({
               </div>
             </div>
             <div className="relative h-4 overflow-hidden text-[11px] leading-4">
-              <p className="flex items-center gap-1.5 text-[#8d8d8d]">
-                <span className="live-dot size-1.5 shrink-0 rounded-full bg-[var(--accent)]" />
+              <p className="flex items-center gap-1.5 text-fg-3">
+                <span className="live-dot size-1.5 shrink-0 rounded-full bg-live/70" />
                 <span className="truncate">
-                  <span className="tabular-nums text-[#1c1c1c]">
+                  <span className="tabular-nums text-fg-2">
                     {live.watchers}
                   </span>{" "}
                   brands watching

@@ -114,7 +114,7 @@ const BoardTile = memo(function BoardTile({
       ) : (
         <Link
           href={`/creator/${creator.slug}`}
-          className="block rounded-[20px] outline-offset-2 focus-visible:outline-2 focus-visible:outline-[#1c1c1c]"
+          className="block rounded-[18px] outline-offset-2 focus-visible:outline-2 focus-visible:outline-live"
         >
           {tile}
         </Link>
@@ -131,7 +131,7 @@ function WalletSlot() {
   if (!ready)
     return (
       <div
-        className="h-[38px] w-[132px] rounded-full bg-[#161616]"
+        className="h-9 w-[132px] rounded-full bg-fg/90"
         aria-hidden
       />
     );
@@ -142,7 +142,7 @@ function WalletSlot() {
         <button
           type="button"
           onClick={() => void disconnect()}
-          className="hidden h-[38px] rounded-full border border-[#e6e4df] bg-white px-3 text-sm sm:block"
+          className="hidden h-9 rounded-full border border-line-strong px-3 text-[13px] text-fg-2 transition-colors hover:border-fg-3 hover:text-fg sm:block"
         >
           Disconnect
         </button>
@@ -294,32 +294,23 @@ export function LiveBoard({ creators = CREATORS, live }: Props) {
   }, [sorted]);
 
   return (
-    <div className="min-h-screen bg-white text-[#1c1c1c]">
-      <header className="sticky top-0 z-20 border-b border-[#f0efec] bg-white">
-        <div className="mx-auto flex max-w-[1500px] items-center justify-between gap-3 px-4 py-3 sm:px-6">
+    <div className="min-h-screen bg-canvas text-fg">
+      <header className="sticky top-0 z-20 border-b border-line bg-canvas/85 backdrop-blur-xl">
+        <div className="mx-auto flex max-w-[1500px] items-center justify-between gap-3 px-4 py-2.5 sm:px-6">
           <div className="flex min-w-0 items-center gap-3">
-            <Link href="/" className="flex shrink-0 items-center gap-1.5">
+            <Link href="/" className="flex shrink-0 items-center gap-2">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src="/logo.png"
                 alt=""
-                width={26}
-                height={26}
-                className="size-[26px]"
+                width={24}
+                height={24}
+                className="size-6"
               />
-              <span className="text-[16px] font-semibold tracking-tight">
+              <span className="text-[16px] font-semibold tracking-[-0.02em]">
                 Pitchlink
               </span>
             </Link>
-            <p className="flex items-center gap-1.5 truncate rounded-full bg-[#f5f4f2] px-2.5 py-1 text-xs text-[#5f5d58]">
-              <span className="live-dot size-1.5 shrink-0 rounded-full bg-[var(--accent)]" />
-              <span className="truncate">
-                <span className="font-semibold tabular-nums text-[#1c1c1c]">
-                  {creators.length}
-                </span>{" "}
-                creators live
-              </span>
-            </p>
           </div>
           <div className="flex shrink-0 items-center gap-2">
             <WalletSlot />
@@ -328,20 +319,38 @@ export function LiveBoard({ creators = CREATORS, live }: Props) {
         <BidTicker />
       </header>
 
-      <main className="mx-auto max-w-[1500px] px-4 pb-10 pt-4 sm:px-6">
-        <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
-          <div>
-            <h1 className="text-xl font-semibold tracking-tight sm:text-2xl">
-              Bid on a creator&rsquo;s next video
+      <main className="mx-auto max-w-[1500px] px-4 pb-12 sm:px-6">
+        <section className="grid gap-5 pb-6 pt-6 sm:pt-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,540px)] lg:items-end lg:gap-12 lg:pb-7">
+          <div className="min-w-0">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-fg-3">
+              The on-chain market for creator attention
+            </p>
+            <h1 className="mt-2.5 max-w-[24ch] text-[30px] font-semibold leading-[1.06] tracking-[-0.035em] text-balance sm:text-[40px]">
+              Creator ad slots, priced by{" "}
+              <span className="text-live">on-chain conversion.</span>
             </h1>
-            <p className="mt-0.5 text-[13px] text-[#8d8d8d]">
-              Bids settle on Solana devnet. Follower counts are seeded,
-              momentum is simulated. Conversion data arrives once the
-              on-chain click counter lands.
+            <p className="mt-3 max-w-[74ch] text-[14px] leading-relaxed text-pretty text-fg-2 sm:text-[15px]">
+              Brands bid SOL for a slot in a small creator&rsquo;s next video.
+              The winner gets a tracked link, and every click through it is
+              recorded on Solana, so creators are priced on results, not
+              follower count.
             </p>
           </div>
+          <HowItWorks />
+        </section>
+
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-3 border-t border-line pt-4">
+          <div className="flex min-w-0 items-baseline gap-2.5">
+            <h2 className="text-[15px] font-semibold tracking-[-0.01em]">
+              Next videos up for auction
+            </h2>
+            <span className="text-[12px] tabular-nums text-fg-3">
+              {creators.length} creators ·{" "}
+              {creators.filter((c) => c.status === "live").length} live
+            </span>
+          </div>
           <div
-            className="flex rounded-full border border-[#e9e7e2] bg-[#f5f4f2] p-1"
+            className="flex rounded-full border border-line bg-raised p-0.5"
             role="group"
             aria-label="Sort creators"
           >
@@ -351,10 +360,10 @@ export function LiveBoard({ creators = CREATORS, live }: Props) {
                 type="button"
                 aria-pressed={sort === option.key}
                 onClick={() => changeSort(option.key)}
-                className={`rounded-full px-3 py-1.5 text-[13px] font-medium transition-colors ${
+                className={`rounded-full px-3 py-1.5 text-[12.5px] font-medium transition-colors ${
                   sort === option.key
-                    ? "bg-white text-[#1c1c1c] shadow-sm"
-                    : "text-[#8d8d8d] hover:text-[#1c1c1c]"
+                    ? "bg-panel-2 text-fg shadow-[inset_0_0_0_1px_rgb(255_255_255/0.06)]"
+                    : "text-fg-3 hover:text-fg"
                 }`}
               >
                 {option.label}
@@ -393,7 +402,58 @@ export function LiveBoard({ creators = CREATORS, live }: Props) {
             );
           })}
         </div>
+
+        <p className="mt-10 max-w-[80ch] text-[11.5px] leading-relaxed text-fg-3">
+          Demo board: follower counts are seeded and view momentum is
+          simulated. Bids, escrow and settlement run on Solana devnet.
+        </p>
       </main>
     </div>
+  );
+}
+
+const STEPS = [
+  {
+    title: "Bid SOL",
+    body: "Escrowed on-chain. Outbid? Refunded in the same tx.",
+  },
+  {
+    title: "Win the slot",
+    body: "Top bid pays the creator. Your logo goes in the video.",
+  },
+  {
+    title: "Count every click",
+    body: "Your tracked link logs clicks on Solana.",
+  },
+];
+
+function HowItWorks() {
+  return (
+    <ol className="grid grid-cols-3 gap-1.5 sm:gap-2" aria-label="How it works">
+      {STEPS.map((step, i) => (
+        <li
+          key={step.title}
+          className="relative min-w-0 rounded-[14px] border border-line bg-raised px-2.5 py-2.5 sm:px-3.5 sm:py-3"
+        >
+          <span
+            className={`font-mono text-[10px] font-medium ${i === 2 ? "text-live-ink" : "text-fg-3"}`}
+          >
+            0{i + 1}
+          </span>
+          <p className="mt-1 text-[12.5px] font-semibold leading-tight tracking-[-0.01em] sm:text-[14px]">
+            {step.title}
+          </p>
+          <p className="mt-1 hidden text-[12px] leading-snug text-fg-3 sm:block">
+            {step.body}
+          </p>
+          {i < STEPS.length - 1 ? (
+            <span
+              aria-hidden
+              className="absolute -right-[7px] top-1/2 z-[1] hidden size-3 -translate-y-1/2 rotate-45 border-r border-t border-line-strong bg-canvas sm:block"
+            />
+          ) : null}
+        </li>
+      ))}
+    </ol>
   );
 }
