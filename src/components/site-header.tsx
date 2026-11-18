@@ -5,11 +5,16 @@ import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { ChainStatus } from "@/components/chain-status";
-import { CREATORS } from "@/data/creators";
 
-const HERO = CREATORS.find((c) => c.status === "live");
-
-export function SiteHeader() {
+export function SiteHeader({
+  crumb,
+  detail,
+}: {
+  /** Page name after "Pitchlink /". */
+  crumb?: string;
+  /** Muted suffix, hidden on phones. */
+  detail?: string;
+}) {
   const { connected, disconnect } = useWallet();
   const [ready, setReady] = useState(false);
 
@@ -28,14 +33,16 @@ export function SiteHeader() {
               Pitchlink
             </span>
           </Link>
-          {HERO ? (
+          {crumb ? (
             <>
               <span className="text-fg-3" aria-hidden>
                 /
               </span>
               <span className="truncate text-fg-2">
-                {HERO.name}
-                <span className="hidden text-fg-3 sm:inline"> · next video ad slot</span>
+                {crumb}
+                {detail ? (
+                  <span className="hidden text-fg-3 sm:inline"> · {detail}</span>
+                ) : null}
               </span>
             </>
           ) : null}

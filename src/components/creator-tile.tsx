@@ -161,7 +161,7 @@ function compact(n: number): string {
 const LABEL =
   "text-[9px] font-medium uppercase tracking-[0.14em] text-fg-3";
 const CHIP =
-  "rounded-full bg-black/55 px-2 py-1 text-[10px] font-semibold text-white/85 ring-1 ring-white/10 backdrop-blur-md";
+  "whitespace-nowrap rounded-full bg-black/55 px-2 py-1 text-[10px] font-semibold text-white/85 ring-1 ring-white/10 backdrop-blur-md";
 
 type SparkInit = ReturnType<typeof staticSpark>;
 
@@ -407,9 +407,9 @@ function CreatorTileImpl({
         />
         <div className="flex items-center justify-between gap-2 p-2">
           {isLive ? (
-            <span className="live-badge flex items-center gap-1.5 rounded-full bg-live px-2 py-1 text-[10px] font-bold tracking-[0.12em] text-canvas">
+            <span className="live-badge flex items-center gap-1.5 whitespace-nowrap rounded-full bg-live px-2 py-1 text-[10px] font-bold tracking-[0.12em] text-canvas">
               <span className="live-dot size-1.5 rounded-full bg-canvas" />
-              LIVE AUCTION
+              LIVE<span className="hidden sm:inline"> AUCTION</span>
             </span>
           ) : (
             <span className={`${CHIP} tracking-[0.1em]`}>SOON</span>
@@ -462,7 +462,10 @@ function CreatorTileImpl({
         <p className="-mt-2 flex items-center gap-1.5 rounded-b-[12px] border border-t-0 border-live/20 bg-live/[0.03] px-2.5 pb-1.5 pt-1 text-[10px] leading-tight text-fg-3 sm:-mt-2.5">
           <ChainIcon className="size-3 shrink-0 text-live/70" />
           <span className="truncate">
-            Tracked clicks on Solana, not followers
+            <span className="sm:hidden">Tracked clicks, not followers</span>
+            <span className="hidden sm:inline">
+              Tracked clicks on Solana, not followers
+            </span>
           </span>
         </p>
 
@@ -521,7 +524,8 @@ function CreatorTileImpl({
                   <CheckIcon className="size-2.5" />
                   ON-CHAIN
                 </span>
-                <span className="truncate font-mono group-hover/proof:text-fg group-hover/proof:underline">
+                <span className="text-fg-3 sm:hidden">verify</span>
+                <span className="hidden truncate font-mono group-hover/proof:text-fg group-hover/proof:underline sm:inline">
                   {live.bidSignature
                     ? `bid tx ${shortAddress(live.bidSignature)}`
                     : `auction ${shortAddress(live.auctionAddress!)}`}
@@ -532,7 +536,7 @@ function CreatorTileImpl({
               </a>
             ) : null}
             <Link
-              href={`/creator/${creator.slug}`}
+              href={creator.auctionCreatorPubkey ? "/auction" : `/creator/${creator.slug}`}
               className="mt-2 flex h-[34px] items-center justify-center rounded-full bg-live text-[12.5px] font-semibold text-canvas transition-[background-color,transform] hover:bg-live-ink active:scale-[0.98]"
             >
               Place bid
