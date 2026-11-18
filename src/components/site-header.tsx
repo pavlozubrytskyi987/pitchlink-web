@@ -2,7 +2,12 @@
 
 import { useWallet } from "@solana/wallet-adapter-react";
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
+import Link from "next/link";
 import { useEffect, useState } from "react";
+import { ChainStatus } from "@/components/chain-status";
+import { CREATORS } from "@/data/creators";
+
+const HERO = CREATORS.find((c) => c.status === "live");
 
 export function SiteHeader() {
   const { connected, disconnect } = useWallet();
@@ -13,32 +18,49 @@ export function SiteHeader() {
   }, []);
 
   return (
-    <header className="flex items-center justify-between gap-4 px-5 py-4 sm:px-8">
-      <div className="min-w-0">
-        <a href="/" className="flex items-center gap-1.5 text-[15px] font-semibold tracking-tight text-[#1c1c1c]">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/logo.png" alt="" width={22} height={22} className="size-[22px]" />
-          Pitchlink
-        </a>
-        <p className="text-[13px] text-[#8d8d8d]">Logo on the piece · Solana devnet</p>
-      </div>
-      <div className="flex items-center gap-2">
-        {ready ? (
-          <>
-            <WalletMultiButton />
-            {connected ? (
-              <button
-                type="button"
-                onClick={() => void disconnect()}
-                className="h-[38px] rounded-full border border-[#e6e4df] bg-white px-3 text-sm text-[#1c1c1c]"
-              >
-                Disconnect
-              </button>
-            ) : null}
-          </>
-        ) : (
-          <div className="h-[38px] w-[132px] rounded-full bg-[#161616]" aria-hidden />
-        )}
+    <header className="sticky top-0 z-20 border-b border-line bg-canvas/85 backdrop-blur-xl">
+      <div className="mx-auto flex max-w-[1500px] items-center justify-between gap-3 px-4 py-2.5 sm:px-6">
+        <nav className="flex min-w-0 items-center gap-2 text-[14px]" aria-label="Breadcrumb">
+          <Link href="/" className="flex shrink-0 items-center gap-2">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/logo.png" alt="" width={24} height={24} className="size-6" />
+            <span className="text-[16px] font-semibold tracking-[-0.02em] text-fg">
+              Pitchlink
+            </span>
+          </Link>
+          {HERO ? (
+            <>
+              <span className="text-fg-3" aria-hidden>
+                /
+              </span>
+              <span className="truncate text-fg-2">
+                {HERO.name}
+                <span className="hidden text-fg-3 sm:inline"> · next video ad slot</span>
+              </span>
+            </>
+          ) : null}
+        </nav>
+        <div className="flex shrink-0 items-center gap-2">
+          <span className="hidden sm:block">
+            <ChainStatus compact />
+          </span>
+          {ready ? (
+            <>
+              <WalletMultiButton />
+              {connected ? (
+                <button
+                  type="button"
+                  onClick={() => void disconnect()}
+                  className="hidden h-9 rounded-full border border-line-strong px-3 text-[13px] text-fg-2 transition-colors hover:border-fg-3 hover:text-fg sm:block"
+                >
+                  Disconnect
+                </button>
+              ) : null}
+            </>
+          ) : (
+            <div className="h-9 w-[132px] rounded-full bg-fg/90" aria-hidden />
+          )}
+        </div>
       </div>
     </header>
   );
