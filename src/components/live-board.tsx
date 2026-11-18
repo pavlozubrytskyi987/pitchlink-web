@@ -15,7 +15,10 @@ import {
 import { BidTicker } from "@/components/bid-ticker";
 import { CreatorTile, type TileLive } from "@/components/creator-tile";
 import { CREATORS, type Creator } from "@/data/creators";
+import { ChainStatus, ProofLink } from "@/components/chain-status";
 import { subscribeFeed, type BidEntry } from "@/lib/bid-feed";
+import { PROGRAM_ID } from "@/lib/config";
+import { useHeroAuction } from "@/lib/use-hero-auction";
 import { observeInView, observeNear } from "@/lib/visibility";
 
 type SortKey = "hot" | "ending" | "bid";
@@ -51,10 +54,9 @@ function seededLive(creators: Creator[]): Record<string, TileLive> {
   creators.forEach((c, i) => {
     const live = c.status === "live";
     out[c.slug] = {
-      // Live hero gets a seeded auction client-side (see effect below) so the
-      // demo looks real before a real auction is wired in; the `live` prop
-      // from the caller overrides whenever it's provided.
-      currentBidSol: live ? 0.42 : null,
+      // The live hero's bid and end time are read from its devnet auction
+      // account (useHeroAuction); nothing is invented while that loads.
+      currentBidSol: null,
       auctionEndsAt: null,
       watchers: live ? 8 : 2 + ((i * 3) % 7),
       lastBid: null,
@@ -177,21 +179,22 @@ export function LiveBoard({ creators = CREATORS, live }: Props) {
     });
   }, []);
 
-  // Seed the live auction's end time on the client only, so SSR and client
-  // agree on the initial HTML (no hydration mismatch from Date.now()).
-  useEffect(() => {
-    const hero = creators.find((c) => c.status === "live");
-    if (!hero) return;
-    const endsAt = Math.floor(Date.now() / 1000) + 4 * 3600 + 12 * 60 + 37;
-    setSeeded((prev) =>
-      prev[hero.slug]?.auctionEndsAt != null
-        ? prev
-        : {
-            ...prev,
-            [hero.slug]: { ...prev[hero.slug], auctionEndsAt: endsAt },
-          },
-    );
-  }, [creators]);
+  // The hero tile's bid, end time and auction address come from the real
+  // devnet auction account. Explicit `live` values from the caller still win.
+  const hero = creators.find((c) => c.status === "live");
+  const heroChain = useHeroAuction(hero);
+  const liveAll = useMemo(() => {
+    if (!hero || !heroChain) return live;
+    const lamports = Math.round(heroChain.currentBidSol * 1e9);
+    const chain: Partial<TileLive> = {
+      currentBidSol: heroChain.currentBidSol,
+      auctionEndsAt: heroChain.endsAt,
+      auctionAddress: heroChain.address,
+      settled: heroChain.settled,
+      lastBid: lamports > 0 ? { id: lamports, amountSol: heroChain.currentBidSol } : null,
+    };
+    return { ...live, [hero.slug]: { ...chain, ...live?.[hero.slug] } };
+  }, [hero, heroChain, live]);
 
   // Simulated watcher drift: one tile every few seconds, so one tile re-renders.
   useEffect(() => {
@@ -209,39 +212,11 @@ export function LiveBoard({ creators = CREATORS, live }: Props) {
     return () => window.clearInterval(id);
   }, [creators]);
 
-  // Simulated bid bumps on the live hero while no on-chain auction is wired.
-  // Cursor: once `live` is passed from a real auction listener, drop this.
-  useEffect(() => {
-    const hero = creators.find((c) => c.status === "live");
-    if (!hero || live?.[hero.slug]?.currentBidSol != null) return;
-    const bidIdRef = { n: 0 };
-    const id = window.setInterval(() => {
-      setSeeded((prev) => {
-        const current = prev[hero.slug];
-        const next = +(
-          (current.currentBidSol ?? 0) +
-          0.05 +
-          Math.random() * 0.3
-        ).toFixed(2);
-        bidIdRef.n++;
-        return {
-          ...prev,
-          [hero.slug]: {
-            ...current,
-            currentBidSol: next,
-            lastBid: { id: bidIdRef.n, amountSol: next },
-          },
-        };
-      });
-    }, 6000);
-    return () => window.clearInterval(id);
-  }, [creators, live]);
-
   const sorted = useMemo(() => {
     const bid = (c: Creator) =>
-      live?.[c.slug]?.currentBidSol ?? seeded[c.slug]?.currentBidSol ?? -1;
+      liveAll?.[c.slug]?.currentBidSol ?? seeded[c.slug]?.currentBidSol ?? -1;
     const ends = (c: Creator) =>
-      live?.[c.slug]?.auctionEndsAt ??
+      liveAll?.[c.slug]?.auctionEndsAt ??
       seeded[c.slug]?.auctionEndsAt ??
       c.nextVideoAt;
     const list = creators.slice();
@@ -254,7 +229,7 @@ export function LiveBoard({ creators = CREATORS, live }: Props) {
       list.sort((a, b) => bid(b) - bid(a) || b.followers - a.followers);
     }
     return list;
-  }, [creators, live, seeded, sort]);
+  }, [creators, liveAll, seeded, sort]);
 
   function changeSort(next: SortKey) {
     if (next === sort) return;
@@ -313,6 +288,9 @@ export function LiveBoard({ creators = CREATORS, live }: Props) {
             </Link>
           </div>
           <div className="flex shrink-0 items-center gap-2">
+            <span className="hidden sm:block">
+              <ChainStatus compact />
+            </span>
             <WalletSlot />
           </div>
         </div>
@@ -335,6 +313,13 @@ export function LiveBoard({ creators = CREATORS, live }: Props) {
               recorded on Solana, so creators are priced on results, not
               follower count.
             </p>
+            <div className="mt-4 flex flex-wrap items-center gap-2">
+              <ChainStatus />
+              <ProofLink label="Program" address={PROGRAM_ID} />
+              {heroChain ? (
+                <ProofLink label="Live auction" address={heroChain.address} />
+              ) : null}
+            </div>
           </div>
           <HowItWorks />
         </section>
@@ -379,7 +364,7 @@ export function LiveBoard({ creators = CREATORS, live }: Props) {
           {sorted.map((creator) => {
             const real = latestReal[creator.slug];
             const merged: Partial<TileLive> | undefined =
-              real || live?.[creator.slug]
+              real || liveAll?.[creator.slug]
                 ? {
                     ...(real
                       ? {
@@ -388,7 +373,7 @@ export function LiveBoard({ creators = CREATORS, live }: Props) {
                           lastBid: { id: 0, amountSol: real.amountSol },
                         }
                       : null),
-                    ...live?.[creator.slug],
+                    ...liveAll?.[creator.slug],
                   }
                 : undefined;
             return (
@@ -404,8 +389,11 @@ export function LiveBoard({ creators = CREATORS, live }: Props) {
         </div>
 
         <p className="mt-10 max-w-[80ch] text-[11.5px] leading-relaxed text-fg-3">
-          Demo board: follower counts are seeded and view momentum is
-          simulated. Bids, escrow and settlement run on Solana devnet.
+          Live on devnet: the program, the {hero?.name ?? "hero"} auction, its
+          bids and settlement. Every chip marked on-chain opens the transaction
+          on Solana Explorer. Demo data: follower counts are seeded; view
+          momentum, watcher counts and ticker entries marked SIM are simulated.
+          Conversion fills in from the on-chain click counter.
         </p>
       </main>
     </div>

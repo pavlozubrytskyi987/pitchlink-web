@@ -2,7 +2,9 @@
 
 import Link from "next/link";
 import { memo, useEffect, useRef, useState } from "react";
+import { ChainIcon, CheckIcon } from "@/components/icons";
 import type { Creator } from "@/data/creators";
+import { explorerAddress, explorerTx, shortAddress } from "@/lib/explorer";
 import { subscribe } from "@/lib/ticker";
 
 export type TileLive = {
@@ -15,6 +17,10 @@ export type TileLive = {
   lastBid: { id: number; amountSol: number } | null;
   /** Devnet tx signature of the latest on-chain bid; absent for seeded data. */
   bidSignature?: string | null;
+  /** Devnet auction account (PDA) backing this tile, when it is real. */
+  auctionAddress?: string | null;
+  /** True once the on-chain auction has paid out. */
+  settled?: boolean;
 };
 
 type Props = {
@@ -159,19 +165,6 @@ const CHIP =
 
 type SparkInit = ReturnType<typeof staticSpark>;
 
-function ChainIcon({ className }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 16 16" fill="none" aria-hidden className={className}>
-      <path
-        d="M6.6 9.4a2.6 2.6 0 0 0 3.7 0l2.2-2.2a2.6 2.6 0 0 0-3.7-3.7l-.7.7M9.4 6.6a2.6 2.6 0 0 0-3.7 0L3.5 8.8a2.6 2.6 0 0 0 3.7 3.7l.7-.7"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-      />
-    </svg>
-  );
-}
-
 /** Simulated views/day line. The tile's rAF loop writes into these refs. */
 function Sparkline({
   slug,
@@ -277,8 +270,10 @@ function CreatorTileImpl({
   const [videoOn, setVideoOn] = useState(false);
 
   const isLive = creator.status === "live";
-  const countdownTarget = live.auctionEndsAt ?? creator.nextVideoAt;
-  const endedLabel = isLive ? "Ended" : "Dropping";
+  // The live tile waits for its real end time instead of showing a guess.
+  const countdownTarget =
+    live.auctionEndsAt ?? (isLive ? null : creator.nextVideoAt);
+  const endedLabel = isLive ? (live.settled ? "Settled" : "Ended") : "Dropping";
   const initial = staticSpark(creator.momentum);
 
   useEffect(() => {
@@ -297,9 +292,10 @@ function CreatorTileImpl({
       const second = Math.floor(Date.now() / 1000);
       if (second !== lastSecond) {
         lastSecond = second;
-        const remaining = countdownTarget - second;
+        const remaining =
+          countdownTarget === null ? null : countdownTarget - second;
         const cd = countdownRef.current;
-        if (cd) {
+        if (cd && remaining !== null) {
           cd.textContent = formatCountdown(remaining, endedLabel);
           if (isLive)
             cd.dataset.urgent = remaining > 0 && remaining < 3600 ? "1" : "";
@@ -493,7 +489,9 @@ function CreatorTileImpl({
                 key={live.lastBid?.id ?? "initial"}
               >
                 <span ref={bidRef} suppressHydrationWarning>
-                  {formatSol(live.currentBidSol ?? 0)}
+                  {live.currentBidSol === null
+                    ? "—"
+                    : formatSol(live.currentBidSol)}
                 </span>{" "}
                 <span className="text-[12px] font-medium text-fg-3">SOL</span>
               </p>
@@ -506,15 +504,31 @@ function CreatorTileImpl({
                 </span>
               </p>
             </div>
-            {live.bidSignature ? (
+            {live.bidSignature || live.auctionAddress ? (
               <a
-                href={`https://explorer.solana.com/tx/${live.bidSignature}?cluster=devnet`}
+                href={
+                  live.bidSignature
+                    ? explorerTx(live.bidSignature)
+                    : explorerAddress(live.auctionAddress!)
+                }
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={(e) => e.stopPropagation()}
-                className="mt-0.5 inline-flex items-center gap-1 text-[11px] font-medium text-live-ink hover:underline"
+                title="Verify on Solana Explorer (devnet)"
+                className="group/proof mt-1.5 flex min-w-0 items-center gap-1.5 rounded-full border border-live/25 bg-live/[0.06] px-2 py-1 text-[10.5px] leading-none text-fg-2 transition-colors hover:border-live/50"
               >
-                view on Explorer ↗
+                <span className="flex shrink-0 items-center gap-0.5 font-bold tracking-[0.08em] text-live-ink">
+                  <CheckIcon className="size-2.5" />
+                  ON-CHAIN
+                </span>
+                <span className="truncate font-mono group-hover/proof:text-fg group-hover/proof:underline">
+                  {live.bidSignature
+                    ? `bid tx ${shortAddress(live.bidSignature)}`
+                    : `auction ${shortAddress(live.auctionAddress!)}`}
+                </span>
+                <span className="ml-auto shrink-0 text-fg-3 group-hover/proof:text-live-ink">
+                  ↗
+                </span>
               </a>
             ) : null}
             <Link
