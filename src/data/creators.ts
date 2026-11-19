@@ -8,7 +8,7 @@
 // creator and has no close-after-settle instruction; the old wallet
 // (HijGXNG2...FoPD) still holds its settled auction account.
 export const HERO_CREATOR_PUBKEY: string | null =
-  "BJAg7KV2Noy7M5QvAfJ2JoGFQSyBN9zTdRYtkqR4PZHX";
+  "3na5fsd9VtLb3JzGbYg75dRXPw3a4vLpafh7R8VpuK3x";
 
 /** Floor the UI enforces on bid inputs. The program itself just requires > current. */
 export const MIN_BID_SOL = 0.05;
