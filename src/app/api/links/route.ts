@@ -53,9 +53,16 @@ export async function POST(req: NextRequest) {
   }
 
   // Init the on-chain counter. Harmless if the PDA happens to already exist.
-  try {
-    const existing = await getClickCounter(serverConnection(), link.id);
-    if (!existing) {
+  // Public devnet RPC 429s fairly often, so we retry a few times with backoff.
+  const maxAttempts = 4;
+  let lastErr: unknown = null;
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    try {
+      const existing = await getClickCounter(serverConnection(), link.id);
+      if (existing) {
+        lastErr = null;
+        break;
+      }
       const sig = await initClickCounter(
         serverConnection(),
         relayerWallet(),
@@ -63,13 +70,21 @@ export async function POST(req: NextRequest) {
         creator,
       );
       console.log(`[pitchlink] init ClickCounter for ${link.id}:`, sig);
+      lastErr = null;
+      break;
+    } catch (error) {
+      lastErr = error;
+      const msg = error instanceof Error ? error.message : String(error);
+      console.warn(`[pitchlink] initClickCounter attempt ${attempt} failed:`, msg);
+      if (attempt === maxAttempts) break;
+      await new Promise((r) => setTimeout(r, 400 * attempt));
     }
-  } catch (error) {
-    console.error("[pitchlink] initClickCounter failed", error);
+  }
+  if (lastErr) {
     return NextResponse.json(
       {
         error: "link saved but on-chain counter init failed; try again",
-        detail: error instanceof Error ? error.message : String(error),
+        detail: lastErr instanceof Error ? lastErr.message : String(lastErr),
       },
       { status: 502 },
     );
