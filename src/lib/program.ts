@@ -64,6 +64,8 @@ export type BidRecord = {
   bidder: PublicKey;
   amount: bigint;
   ts: number;
+  /** Auction PDA this bid landed on; only set by cross-auction fetches. */
+  auction?: PublicKey;
 };
 
 const BID_PLACED_DISC = [135, 53, 176, 83, 193, 69, 108, 61];
@@ -98,6 +100,41 @@ export async function getBids(connection: Connection, auction: PublicKey): Promi
           bidder: bid.bidder,
           amount: bid.amount,
           ts: bid.ts,
+        });
+      }
+    }),
+  );
+  records.sort((a, b) => b.ts - a.ts);
+  return records;
+}
+
+/**
+ * Every BidPlaced event the program ever emitted, newest first. Walks
+ * recent program signatures and decodes BidPlaced logs — identical parser
+ * to getBids(), but keyed on the program id instead of one auction PDA.
+ */
+export async function getAllBids(
+  connection: Connection,
+  limit = 200,
+): Promise<BidRecord[]> {
+  const signatures = await connection.getSignaturesForAddress(PROGRAM_PUBKEY, { limit });
+  const records: BidRecord[] = [];
+  await Promise.all(
+    signatures.map(async (entry) => {
+      if (entry.err) return;
+      const tx = await connection.getTransaction(entry.signature, {
+        commitment: "confirmed",
+        maxSupportedTransactionVersion: 0,
+      });
+      const logs = tx?.meta?.logMessages;
+      if (!logs) return;
+      for (const bid of parseBidLogs(logs)) {
+        records.push({
+          signature: entry.signature,
+          bidder: bid.bidder,
+          amount: bid.amount,
+          ts: bid.ts,
+          auction: bid.auction,
         });
       }
     }),

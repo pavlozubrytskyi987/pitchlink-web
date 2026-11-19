@@ -3,7 +3,9 @@ import { rpcEndpoint } from "../src/lib/config";
 import { auctionPda, getAuction } from "../src/lib/program";
 
 async function main() {
-  const creator = new PublicKey("HijGXNG2mLfq62rQrbWmJco3Sser37ad8xDdCbChFoPD");
+  const creator = new PublicKey(
+    process.argv[2] ?? "HijGXNG2mLfq62rQrbWmJco3Sser37ad8xDdCbChFoPD",
+  );
   const conn = new Connection(rpcEndpoint(), "confirmed");
   const pda = auctionPda(creator);
   console.log("auction PDA:", pda.toBase58());

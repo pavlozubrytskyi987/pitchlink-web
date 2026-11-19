@@ -7,6 +7,7 @@ import { CheckIcon, ExternalIcon } from "@/components/icons";
 import { useLogoDraft } from "@/components/logo-draft";
 import { pushRealBid } from "@/lib/bid-feed";
 import { loadBidLogo, saveBidLogo } from "@/lib/bid-logos";
+import { brandFor } from "@/data/brands";
 import { CREATORS, HERO_CREATOR_PUBKEY, MIN_BID_SOL } from "@/data/creators";
 import { explorerAddress, explorerTx } from "@/lib/explorer";
 import {
@@ -391,30 +392,51 @@ export function AuctionPanel() {
               <p className="mt-2 text-[13px] text-ash">No bids yet.</p>
             ) : (
               <ul className="mt-1.5 divide-y divide-hairline">
-                {bids.map((bid, i) => (
-                  <li key={bid.signature}>
-                    <a
-                      href={explorerTx(bid.signature)}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      title="Open this bid on Solana Explorer"
-                      className="group -mx-2 flex items-center justify-between gap-3 rounded-[8px] px-2 py-2.5 transition-colors hover:bg-wash"
-                    >
-                      <span className="flex min-w-0 items-center gap-2">
-                        <span className={`size-[5px] shrink-0 rounded-full ${i === 0 ? "bg-accent" : "bg-hairline-strong"}`} />
-                        <span className="truncate font-mono text-[12.5px] text-graphite">
-                          {shortKey(bid.bidder.toBase58())}
+                {bids.map((bid, i) => {
+                  const bidder = bid.bidder.toBase58();
+                  const brand = brandFor(bidder);
+                  return (
+                    <li key={bid.signature}>
+                      <a
+                        href={explorerTx(bid.signature)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        title="Open this bid on Solana Explorer"
+                        className="group -mx-2 flex items-center justify-between gap-3 rounded-[8px] px-2 py-2.5 transition-colors hover:bg-wash"
+                      >
+                        <span className="flex min-w-0 items-center gap-2">
+                          <span className={`size-[5px] shrink-0 rounded-full ${i === 0 ? "bg-accent" : "bg-hairline-strong"}`} />
+                          {brand ? (
+                            <>
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img
+                                src={brand.logo}
+                                alt=""
+                                className="size-4 shrink-0 rounded-[3px] bg-ink object-contain p-[2px]"
+                              />
+                              <span className="truncate text-[12.5px] font-medium text-ink">
+                                {brand.name}
+                              </span>
+                              <span className="truncate font-mono text-[11.5px] text-ash">
+                                {shortKey(bidder)}
+                              </span>
+                            </>
+                          ) : (
+                            <span className="truncate font-mono text-[12.5px] text-graphite">
+                              {shortKey(bidder)}
+                            </span>
+                          )}
                         </span>
-                      </span>
-                      <span className="flex shrink-0 items-center gap-2">
-                        <span className="text-[13.5px]">
-                          {formatSol(bid.amount)} SOL
+                        <span className="flex shrink-0 items-center gap-2">
+                          <span className="text-[13.5px]">
+                            {formatSol(bid.amount)} SOL
+                          </span>
+                          <ExternalIcon className="size-3 text-ash group-hover:text-accent" />
                         </span>
-                        <ExternalIcon className="size-3 text-ash group-hover:text-accent" />
-                      </span>
-                    </a>
-                  </li>
-                ))}
+                      </a>
+                    </li>
+                  );
+                })}
               </ul>
             )}
           </div>
