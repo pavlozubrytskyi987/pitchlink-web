@@ -55,29 +55,23 @@ type Seed = {
   hasPoster?: boolean; // public/creators/<slug>/poster.jpg exists
 };
 
-// Placeholders until Checkpoint 4 replaces these with real crypto creators.
+// Hero slug preserved for routing/auction wiring.
 const SEEDS: Seed[] = [
   {
-    slug: "jayanth",
-    name: "Jayanth",
-    handle: "@jayanth.mov",
-    niche: "Edtech",
-    g: ["#b91c1c", "#431407"],
-    avatarColor: "#b91c1c",
-    initials: "J",
-    hasPoster: true,
-  },
-  {
     slug: "chef-dima",
-    name: "Chef Dima",
-    handle: "@chefdima",
-    niche: "Chef",
-    g: ["#f97316", "#dc2626"],
-    avatarColor: "#ea580c",
-    initials: "CD",
+    name: "Pavlo Zubrytskyi",
+    handle: "@pavlozubrytsskyi",
+    niche: "Gaming + crypto — gameplay, clips, community",
+    g: ["#6d28d9", "#0ea5e9"],
+    avatarColor: "#6d28d9",
+    initials: "PZ",
     hero: true,
   },
 ];
+
+export const CREATOR_CATEGORIES: Record<string, string[]> = {
+  "chef-dima": ["gaming", "prediction markets", "esports", "crypto"],
+};
 
 export const CREATORS: Creator[] = SEEDS.map((s) => ({
   slug: s.slug,

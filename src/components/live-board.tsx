@@ -260,7 +260,11 @@ export function LiveBoard({ creators = CREATORS, live }: Props) {
 
         <div
           ref={gridRef}
-          className="mt-8 grid grid-cols-2 gap-x-4 gap-y-12 sm:gap-x-6 md:grid-cols-3 lg:grid-cols-4 lg:gap-x-8 lg:gap-y-14"
+          className={
+            sorted.length === 1
+              ? "mt-8 mx-auto grid max-w-[460px] gap-y-12 sm:max-w-[520px]"
+              : "mt-8 grid grid-cols-2 gap-x-4 gap-y-12 sm:gap-x-6 md:grid-cols-3 lg:grid-cols-4 lg:gap-x-8 lg:gap-y-14"
+          }
         >
           {sorted.map((creator) => {
             const real = latestReal[creator.slug];
