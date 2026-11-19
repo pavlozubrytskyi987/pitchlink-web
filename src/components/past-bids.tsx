@@ -22,10 +22,19 @@ function formatSol(lamports: bigint): string {
  * Reads straight from devnet — no local cache, no seeded entries. Empty
  * state is the honest answer when nothing is on-chain yet.
  */
+function friendlyError(err: unknown): string {
+  const msg = err instanceof Error ? err.message : String(err);
+  if (/429|Too many requests|rate[- ]?limit/i.test(msg)) {
+    return "Devnet RPC rate-limited. Try again in a moment.";
+  }
+  return msg.split("\n")[0]?.slice(0, 160) ?? "Something went wrong";
+}
+
 export function PastBids() {
   const { connection } = useConnection();
   const [bids, setBids] = useState<BidRecord[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
     let alive = true;
@@ -35,12 +44,12 @@ export function PastBids() {
         if (alive) setBids(rows);
       })
       .catch((err) => {
-        if (alive) setError(err instanceof Error ? err.message : String(err));
+        if (alive) setError(friendlyError(err));
       });
     return () => {
       alive = false;
     };
-  }, [connection]);
+  }, [connection, attempt]);
 
   return (
     <section className="mx-auto w-full max-w-[1320px] px-5 pb-16 sm:px-8">
@@ -59,7 +68,16 @@ export function PastBids() {
       {bids === null && !error ? (
         <p className="mt-6 text-[13px] text-ash">Loading…</p>
       ) : error ? (
-        <p className="mt-6 text-[13px] text-ash">Could not load past bids: {error}</p>
+        <div className="mt-6 flex flex-wrap items-center gap-3">
+          <p className="text-[13px] text-ash">{error}</p>
+          <button
+            type="button"
+            onClick={() => setAttempt((n) => n + 1)}
+            className="text-[13px] text-accent underline-offset-4 hover:underline"
+          >
+            Retry
+          </button>
+        </div>
       ) : bids && bids.length === 0 ? (
         <p className="mt-6 text-[13px] text-ash">No bids on-chain yet.</p>
       ) : (

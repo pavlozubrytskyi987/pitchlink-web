@@ -112,33 +112,40 @@ export async function getBids(connection: Connection, auction: PublicKey): Promi
  * Every BidPlaced event the program ever emitted, newest first. Walks
  * recent program signatures and decodes BidPlaced logs — identical parser
  * to getBids(), but keyed on the program id instead of one auction PDA.
+ *
+ * Fetches getTransaction in small sequential batches so the public devnet
+ * RPC doesn't 429 on a cold load.
  */
 export async function getAllBids(
   connection: Connection,
-  limit = 200,
+  limit = 50,
+  batchSize = 4,
 ): Promise<BidRecord[]> {
   const signatures = await connection.getSignaturesForAddress(PROGRAM_PUBKEY, { limit });
   const records: BidRecord[] = [];
-  await Promise.all(
-    signatures.map(async (entry) => {
-      if (entry.err) return;
-      const tx = await connection.getTransaction(entry.signature, {
-        commitment: "confirmed",
-        maxSupportedTransactionVersion: 0,
-      });
-      const logs = tx?.meta?.logMessages;
-      if (!logs) return;
-      for (const bid of parseBidLogs(logs)) {
-        records.push({
-          signature: entry.signature,
-          bidder: bid.bidder,
-          amount: bid.amount,
-          ts: bid.ts,
-          auction: bid.auction,
+  for (let i = 0; i < signatures.length; i += batchSize) {
+    const slice = signatures.slice(i, i + batchSize);
+    await Promise.all(
+      slice.map(async (entry) => {
+        if (entry.err) return;
+        const tx = await connection.getTransaction(entry.signature, {
+          commitment: "confirmed",
+          maxSupportedTransactionVersion: 0,
         });
-      }
-    }),
-  );
+        const logs = tx?.meta?.logMessages;
+        if (!logs) return;
+        for (const bid of parseBidLogs(logs)) {
+          records.push({
+            signature: entry.signature,
+            bidder: bid.bidder,
+            amount: bid.amount,
+            ts: bid.ts,
+            auction: bid.auction,
+          });
+        }
+      }),
+    );
+  }
   records.sort((a, b) => b.ts - a.ts);
   return records;
 }

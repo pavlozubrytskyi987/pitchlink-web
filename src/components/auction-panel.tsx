@@ -577,6 +577,10 @@ function shortSig(value: string): string {
 function errorText(error: unknown): string {
   const message =
     error instanceof Error ? error.message : "Something went wrong";
+  // Devnet public RPC loves to 429. Surface a friendly line, not raw JSON.
+  if (/429|Too many requests|rate[- ]?limit/i.test(message)) {
+    return "Devnet RPC rate-limited. Reload in a moment.";
+  }
   const line = message.split("\n")[0]?.trim() || "Something went wrong";
   return line.length > 160 ? `${line.slice(0, 157)}…` : line;
 }
