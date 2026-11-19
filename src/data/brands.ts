@@ -13,7 +13,10 @@ export type Brand = {
  * Keys MUST be base58 pubkeys as produced by the wallet adapter.
  */
 export const KNOWN_BIDDERS: Record<string, Brand> = {
-  // "<SABG bidder pubkey>": { name: "SABG", logo: "/brands/sabg.png" },
+  "4Rj1CUXrKbDyb7dEM3SXpSYmY3aqymKLitYkppjpwTNN": {
+    name: "SABG",
+    logo: "/brands/sabg.png",
+  },
 };
 
 export const SABG: Brand = { name: "SABG", logo: "/brands/sabg.png" };
