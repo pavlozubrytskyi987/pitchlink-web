@@ -19,7 +19,8 @@
     "Segoe UI", Roboto, sans-serif;
   /* Legacy alias: any remaining font-serif usage falls back to sans. */
   --font-serif: var(--font-sans);
-  --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --font-mono:
+    var(--font-mono), ui-monospace, "SF Mono", Menlo, Consolas, monospace;
 }
 
 :root {
@@ -358,5 +359,95 @@ body {
   .claim-logo,
   .claim-lock {
     display: none;
+  }
+}
+
+/* ---- intro overlay -----------------------------------------------------
+   Six ASCII UGC tiles orbit a centered tagline. One click anywhere
+   dismisses with a short scale+fade exit. */
+
+.intro-root {
+  animation: intro-in 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
+  cursor: pointer;
+}
+.intro-leaving {
+  animation: intro-out 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  pointer-events: none;
+}
+@keyframes intro-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes intro-out {
+  to { opacity: 0; transform: scale(1.04); filter: blur(4px); }
+}
+
+.intro-tile {
+  display: inline-block;
+  padding: 10px;
+  background: var(--color-paper);
+  border: 1px solid var(--color-hairline);
+  border-radius: 10px;
+  box-shadow: 0 6px 24px -14px rgb(0 0 0 / 0.18);
+  animation: intro-drift 14s ease-in-out infinite;
+  transform-origin: center;
+}
+
+.intro-slot {
+  position: absolute;
+  opacity: 0;
+  animation: intro-tile-in 0.9s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+.intro-slot pre { margin: 0; }
+
+/* Six anchor points: two columns, three rows, pulled out to the edges. */
+.intro-slot-1 { top: 6%;  left: 5%;   animation-delay: 0.05s; }
+.intro-slot-2 { top: 8%;  right: 5%;  animation-delay: 0.12s; }
+.intro-slot-3 { top: 42%; left: 2%;   animation-delay: 0.19s; }
+.intro-slot-4 { top: 42%; right: 2%;  animation-delay: 0.26s; }
+.intro-slot-5 { bottom: 6%; left: 7%; animation-delay: 0.33s; }
+.intro-slot-6 { bottom: 8%; right: 7%; animation-delay: 0.40s; }
+
+@keyframes intro-tile-in {
+  from { opacity: 0; transform: translateY(12px) scale(0.96); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes intro-drift {
+  0%, 100% { transform: translateY(0) rotate(var(--rot, 0deg)); }
+  50%      { transform: translateY(-8px) rotate(calc(var(--rot, 0deg) + 1.5deg)); }
+}
+
+/* Different drift phase per slot so the ring feels organic, not synced. */
+.intro-slot-1 .intro-tile { --rot: -4deg; animation-delay: -1s; }
+.intro-slot-2 .intro-tile { --rot:  5deg; animation-delay: -3s; }
+.intro-slot-3 .intro-tile { --rot: -2deg; animation-delay: -5s; }
+.intro-slot-4 .intro-tile { --rot:  3deg; animation-delay: -7s; }
+.intro-slot-5 .intro-tile { --rot: -6deg; animation-delay: -9s; }
+.intro-slot-6 .intro-tile { --rot:  4deg; animation-delay: -11s; }
+
+.intro-center {
+  animation: intro-center-in 0.7s cubic-bezier(0.22, 1, 0.36, 1) 0.25s both;
+}
+@keyframes intro-center-in {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.intro-cta {
+  cursor: pointer;
+  box-shadow: 0 10px 28px -14px rgb(0 0 0 / 0.4);
+}
+
+/* Narrow screens: show only four tiles (hide middle row) so the center
+   headline has room. */
+@media (max-width: 720px) {
+  .intro-slot-3, .intro-slot-4 { display: none; }
+  .intro-slot-1, .intro-slot-2 { top: 3%; }
+  .intro-slot-5, .intro-slot-6 { bottom: 3%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .intro-root, .intro-leaving, .intro-center, .intro-slot, .intro-tile {
+    animation: none;
   }
 }
