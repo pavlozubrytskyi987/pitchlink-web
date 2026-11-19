@@ -57,10 +57,14 @@ function AsciiTile({ src, index }: { src: string; index: number }) {
     <div className="intro-tile" data-index={index}>
       <pre
         aria-hidden
-        className="font-mono text-ink leading-[1] whitespace-pre"
+        className="font-mono text-ink whitespace-pre"
         style={{
-          fontSize: "clamp(8px, 1.15vw, 13px)",
+          // Braille glyphs: 2 dots wide, 4 dots tall. Tight leading keeps
+          // the frame visually square at any width.
+          fontSize: "clamp(9px, 1.25vw, 14px)",
+          lineHeight: 0.9,
           letterSpacing: "0px",
+          fontVariantLigatures: "none",
         }}
       >
         {body}
