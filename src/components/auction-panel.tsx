@@ -7,7 +7,7 @@ import { CheckIcon, ExternalIcon } from "@/components/icons";
 import { useLogoDraft } from "@/components/logo-draft";
 import { pushRealBid } from "@/lib/bid-feed";
 import { loadBidLogo, saveBidLogo } from "@/lib/bid-logos";
-import { CREATORS, HERO_CREATOR_PUBKEY } from "@/data/creators";
+import { CREATORS, HERO_CREATOR_PUBKEY, MIN_BID_SOL } from "@/data/creators";
 import { explorerAddress, explorerTx } from "@/lib/explorer";
 import {
   findAuction,
@@ -146,6 +146,12 @@ export function AuctionPanel() {
     try {
       if (!draft) {
         setNotice("Upload a logo on the shirt first. It stays if you win.");
+        setBusy(null);
+        return;
+      }
+      const parsed = Number(amount);
+      if (!Number.isFinite(parsed) || parsed < MIN_BID_SOL) {
+        setNotice(`Minimum bid is ${MIN_BID_SOL} SOL.`);
         setBusy(null);
         return;
       }
@@ -329,7 +335,9 @@ export function AuctionPanel() {
                   value={amount}
                   onChange={(event) => setAmount(event.target.value)}
                   inputMode="decimal"
-                  placeholder="0.10"
+                  min={MIN_BID_SOL}
+                  step="0.01"
+                  placeholder={`${MIN_BID_SOL.toFixed(2)}`}
                   aria-label="Bid in SOL"
                   disabled={ended || !wallet || isCreator}
                   className="h-12 w-full rounded-[10px] border border-hairline-strong bg-paper pl-3.5 pr-12 text-[16px] text-ink outline-none transition-colors placeholder:text-ash focus:border-ink disabled:bg-wash disabled:opacity-60"

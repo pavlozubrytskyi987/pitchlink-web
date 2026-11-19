@@ -4,8 +4,14 @@
 
 // Devnet pubkey of the wallet that owns the live hero auction.
 // (Auction PDA seeds = [b"auction", creator_pubkey].)
+// Rotated for the Checkpoint 4 demo because the program keeps one PDA per
+// creator and has no close-after-settle instruction; the old wallet
+// (HijGXNG2...FoPD) still holds its settled auction account.
 export const HERO_CREATOR_PUBKEY: string | null =
-  "HijGXNG2mLfq62rQrbWmJco3Sser37ad8xDdCbChFoPD";
+  "BJAg7KV2Noy7M5QvAfJ2JoGFQSyBN9zTdRYtkqR4PZHX";
+
+/** Floor the UI enforces on bid inputs. The program itself just requires > current. */
+export const MIN_BID_SOL = 0.05;
 
 export type Creator = {
   slug: string;
