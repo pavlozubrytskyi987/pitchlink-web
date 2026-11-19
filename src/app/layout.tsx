@@ -1,27 +1,19 @@
 import type { Metadata, Viewport } from "next";
-import { Newsreader, Schibsted_Grotesk } from "next/font/google";
+import { Geist } from "next/font/google";
 import "@solana/wallet-adapter-react-ui/styles.css";
 import "./globals.css";
 import { Providers } from "@/components/providers";
 
-const serif = Newsreader({
+const sans = Geist({
   subsets: ["latin"],
-  axes: ["opsz"],
-  style: ["normal", "italic"],
-  variable: "--font-newsreader",
-  display: "swap",
-});
-
-const sans = Schibsted_Grotesk({
-  subsets: ["latin"],
-  variable: "--font-schibsted",
+  variable: "--font-sans",
   display: "swap",
 });
 
 export const metadata: Metadata = {
   title: "Pitchlink: creator ad slots, priced by real conversion",
   description:
-    "Brands bid SOL for a slot in a small creator's next video. The winner gets a tracked link and every click is recorded on Solana.",
+    "Brands bid SOL for a slot in a crypto creator's next video. The winner gets a tracked link and every click is recorded on Solana.",
 };
 
 export const viewport: Viewport = {
@@ -31,7 +23,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${serif.variable} ${sans.variable}`} suppressHydrationWarning>
+    <html lang="en" className={sans.variable} suppressHydrationWarning>
       <body className="bg-paper text-ink antialiased" suppressHydrationWarning>
         <Providers>{children}</Providers>
       </body>

@@ -40,7 +40,7 @@ export default async function CreatorPage({ params }: { params: Promise<{ slug: 
                 className="absolute inset-0 size-full object-cover object-[50%_22%]"
               />
             ) : (
-              <p className="absolute bottom-6 left-6 font-serif text-[44px] italic leading-none tracking-[-0.01em]">
+              <p className="absolute bottom-6 left-6 text-[32px] font-semibold leading-none tracking-[-0.025em]">
                 {creator.niche}
               </p>
             )}
@@ -53,7 +53,7 @@ export default async function CreatorPage({ params }: { params: Promise<{ slug: 
           </div>
 
           <div className="flex min-w-0 flex-col">
-            <h1 className="font-serif text-[44px] leading-[1.02] tracking-[-0.025em] sm:text-[56px]">
+            <h1 className="text-[38px] font-semibold leading-[1.02] tracking-[-0.03em] sm:text-[48px]">
               {creator.name}
             </h1>
             <p className="mt-2 text-[15px] text-graphite">

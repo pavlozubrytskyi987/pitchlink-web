@@ -222,7 +222,7 @@ export function AuctionPanel() {
     <aside className="flex h-full min-h-[480px] flex-col rounded-[14px] border border-hairline bg-paper p-5 sm:min-h-[560px]">
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-baseline gap-3">
-          <h2 className="font-serif text-[24px] leading-none tracking-[-0.015em]">Auction</h2>
+          <h2 className="text-[18px] font-semibold leading-none tracking-[-0.02em]">Auction</h2>
           {status ? <StatusPill status={status} /> : null}
         </div>
         {auction ? (
@@ -256,7 +256,7 @@ export function AuctionPanel() {
               <p className={LABEL}>{auction.settled ? "Status" : "Ends in"}</p>
             </div>
             <div className="mt-1.5 flex items-baseline justify-between gap-3">
-              <p className="font-serif text-[44px] leading-none tracking-[-0.025em]">
+              <p className="text-[36px] font-semibold leading-none tracking-[-0.03em]">
                 {auction.highestBid > BigInt(0) ? (
                   <>
                     {formatSol(auction.highestBid)}{" "}

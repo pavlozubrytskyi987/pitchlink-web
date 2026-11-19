@@ -92,7 +92,7 @@ export function SlotClaimed({
 
       <div className="absolute inset-x-0 top-[4.5rem] flex justify-center px-4">
         <div className="claim-stamp text-center">
-          <p className="flex items-center justify-center gap-2.5 font-serif text-[34px] leading-none tracking-[-0.02em] sm:text-[46px]">
+          <p className="flex items-center justify-center gap-2.5 text-[28px] font-semibold leading-none tracking-[-0.025em] sm:text-[36px]">
             <span className="grid size-6 place-items-center rounded-full bg-accent text-paper sm:size-7">
               <CheckIcon className="size-3.5 sm:size-4" />
             </span>
@@ -130,7 +130,7 @@ export function SlotClaimed({
                 ? "Winning bid (preview)"
                 : `Winning bid${creator ? `, ${creator.name}` : ""}`}
             </p>
-            <p className="mt-1.5 font-serif text-[36px] leading-none tracking-[-0.025em]">
+            <p className="mt-1.5 text-[30px] font-semibold leading-none tracking-[-0.03em]">
               {formatSol(claim.amountSol)}{" "}
               <span className="font-sans text-[14px] tracking-normal text-graphite">SOL</span>
             </p>

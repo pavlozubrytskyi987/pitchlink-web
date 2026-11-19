@@ -14,7 +14,7 @@ export function ConversionStat({ creator }: { creator: string | null }) {
         </p>
       </div>
       <p
-        className={`mt-1 font-serif text-[56px] leading-none tracking-[-0.02em] ${
+        className={`mt-1 text-[48px] font-semibold leading-none tracking-[-0.035em] ${
           empty ? "text-[#c9c9c6]" : "text-ink"
         }`}
       >

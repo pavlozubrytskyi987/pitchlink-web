@@ -35,7 +35,7 @@ export function SiteHeader({
               height={20}
               className="size-5 brightness-0"
             />
-            <span className="font-serif text-[22px] leading-none tracking-[-0.02em]">
+            <span className="text-[20px] font-semibold leading-none tracking-[-0.02em]">
               Pitchlink
             </span>
           </Link>

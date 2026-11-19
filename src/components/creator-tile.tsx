@@ -150,7 +150,7 @@ function CreatorTileImpl({
           </>
         ) : (
           <div className="absolute inset-0 flex flex-col justify-end p-4 sm:p-5">
-            <p className="font-serif text-[26px] italic leading-none tracking-[-0.01em] sm:text-[34px]">
+            <p className="text-[22px] font-semibold leading-tight tracking-[-0.015em] sm:text-[28px]">
               {creator.niche}
             </p>
           </div>
@@ -165,7 +165,7 @@ function CreatorTileImpl({
 
       <div className="flex min-w-0 flex-col pt-4">
         <div className="flex min-w-0 items-baseline justify-between gap-3">
-          <h3 className="truncate font-serif text-[21px] leading-tight tracking-[-0.015em] sm:text-[24px]">
+          <h3 className="truncate text-[18px] font-semibold leading-tight tracking-[-0.015em] sm:text-[20px]">
             {creator.name}
           </h3>
           <p className="hidden shrink-0 text-[12.5px] text-ash sm:block">
@@ -205,7 +205,7 @@ function CreatorTileImpl({
               <p className={LABEL}>Current bid</p>
               <p className={`${LABEL} text-right`}>Closes in</p>
               <p
-                className={`mt-1.5 whitespace-nowrap font-serif text-[28px] leading-none tracking-[-0.02em] sm:text-[32px] ${live.lastBid ? "bid-pop" : ""}`}
+                className={`mt-1.5 whitespace-nowrap text-[26px] font-semibold leading-none tracking-[-0.03em] sm:text-[30px] ${live.lastBid ? "bid-pop" : ""}`}
                 key={live.lastBid?.id ?? "initial"}
               >
                 <span ref={bidRef} suppressHydrationWarning>

@@ -215,7 +215,7 @@ export function LiveBoard({ creators = CREATORS, live }: Props) {
       <main className="mx-auto max-w-[1320px] px-5 pb-20 sm:px-8">
         <section className="grid gap-10 pb-12 pt-12 sm:pt-16 md:grid-cols-[minmax(0,1fr)_300px] md:items-end md:gap-12 lg:grid-cols-[minmax(0,1fr)_340px] lg:gap-20 lg:pb-14">
           <div className="min-w-0">
-            <h1 className="max-w-[20ch] font-serif text-[42px] font-normal leading-[1.02] tracking-[-0.025em] text-balance sm:text-[64px]">
+            <h1 className="max-w-[16ch] text-[40px] font-semibold leading-[1.02] tracking-[-0.03em] text-balance sm:text-[58px]">
               Creator ad slots, priced by real conversion.
             </h1>
             <p className="mt-6 max-w-[58ch] text-[16px] leading-[1.6] text-graphite sm:text-[17px]">
@@ -231,7 +231,7 @@ export function LiveBoard({ creators = CREATORS, live }: Props) {
 
         <div className="mt-16 flex flex-wrap items-end justify-between gap-x-6 gap-y-3 border-b border-hairline pb-4 sm:mt-20">
           <div className="flex min-w-0 items-baseline gap-3">
-            <h2 className="font-serif text-[30px] font-normal leading-none tracking-[-0.02em] sm:text-[34px]">
+            <h2 className="text-[24px] font-semibold leading-none tracking-[-0.025em] sm:text-[28px]">
               Up for auction
             </h2>
             <span className="text-[13.5px] text-ash">
@@ -326,7 +326,7 @@ function HowItWorks() {
           key={step.title}
           className="flex gap-4 py-5 sm:block sm:py-6 sm:pr-10 [&+li]:border-t [&+li]:border-hairline sm:[&+li]:border-l sm:[&+li]:border-t-0 sm:[&+li]:pl-8"
         >
-          <span className="font-serif text-[22px] leading-none text-ash sm:text-[26px]">
+          <span className="text-[14px] font-medium leading-none text-ash tabular-nums sm:text-[15px]">
             {i + 1}
           </span>
           <div className="sm:mt-4">
