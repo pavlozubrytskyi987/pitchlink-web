@@ -82,6 +82,16 @@ export function getLink(id: string): TrackedLink | undefined {
   return load().get(id);
 }
 
+export function setLinkDestination(id: string, destination: string): TrackedLink | undefined {
+  const store = load();
+  const existing = store.get(id);
+  if (!existing) return undefined;
+  const updated: TrackedLink = { ...existing, destination };
+  store.set(id, updated);
+  flush();
+  return updated;
+}
+
 export function listLinks(): TrackedLink[] {
   return [...load().values()].sort(
     (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),

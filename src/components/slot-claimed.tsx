@@ -45,10 +45,9 @@ export function SlotClaimed({
   useEffect(() => {
     let alive = true;
     setLink({ status: "loading" });
-    const destination = new URL(
-      `/creator/${creator?.slug ?? ""}`,
-      window.location.origin,
-    ).toString();
+    // SABG destination template; server substitutes {linkId} after mint so
+    // ?ref=<id> can attribute later off-chain conversion back to this click.
+    const destination = "https://sabg.fun/?ref={linkId}";
     // Let the reveal land before the link appears.
     const started = Date.now();
     getOrMintTrackedLink(claim.auction, destination, claim.creator).then((result) => {

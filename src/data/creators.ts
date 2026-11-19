@@ -51,6 +51,8 @@ type Seed = {
   g: [string, string];
   avatarColor: string;
   initials: string;
+  /** Overrides the initials avatar; served from public/. */
+  avatarPath?: string;
   hero?: boolean;
   hasPoster?: boolean; // public/creators/<slug>/poster.jpg exists
 };
@@ -65,6 +67,7 @@ const SEEDS: Seed[] = [
     g: ["#6d28d9", "#0ea5e9"],
     avatarColor: "#6d28d9",
     initials: "PZ",
+    avatarPath: "/creators/pavlo/avatar.jpg",
     hero: true,
   },
 ];
@@ -78,7 +81,7 @@ export const CREATORS: Creator[] = SEEDS.map((s) => ({
   name: s.name,
   handle: s.handle,
   niche: s.niche,
-  avatarUrl: avatarDataUri(s.avatarColor, s.initials),
+  avatarUrl: s.avatarPath ?? avatarDataUri(s.avatarColor, s.initials),
   clipUrl: `/creators/${s.slug}/clip.mp4`,
   posterUrl: s.hasPoster
     ? `/creators/${s.slug}/poster.jpg`

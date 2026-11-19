@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { PublicKey } from "@solana/web3.js";
-import { createLink, listLinks } from "@/lib/links";
+import { createLink, listLinks, setLinkDestination } from "@/lib/links";
 import { getClickCounter, initClickCounter } from "@/lib/program";
 import { relayerWallet, serverConnection } from "@/lib/relayer";
 
@@ -23,7 +23,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "destination is required" }, { status: 400 });
   }
   try {
-    const url = new URL(destination);
+    // Allow the {linkId} template token during URL validation; the real id
+    // is substituted below once we know it.
+    const probe = destination.replace("{linkId}", "placeholder");
+    const url = new URL(probe);
     if (url.protocol !== "http:" && url.protocol !== "https:") throw new Error("bad protocol");
   } catch {
     return NextResponse.json(
@@ -43,7 +46,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "creator must be a base58 pubkey" }, { status: 400 });
   }
 
-  const link = createLink(destination, creator.toBase58());
+  let link = createLink(destination, creator.toBase58());
+  if (destination.includes("{linkId}")) {
+    const resolved = destination.replaceAll("{linkId}", link.id);
+    link = setLinkDestination(link.id, resolved) ?? link;
+  }
 
   // Init the on-chain counter. Harmless if the PDA happens to already exist.
   try {
