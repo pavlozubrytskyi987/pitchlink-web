@@ -12,7 +12,9 @@ const CLIPS = [
   "6-kalshi-chair",
 ] as const;
 
-const STORAGE_KEY = "pitchlink-intro-dismissed";
+// Bump the version suffix any time the intro copy changes so returning
+// visitors see the new framing instead of their old dismissed flag.
+const STORAGE_KEY = "pitchlink-intro-dismissed-v2";
 
 type AsciiClip = {
   cols: number;
@@ -55,9 +57,9 @@ function AsciiTile({ src, index }: { src: string; index: number }) {
     <div className="intro-tile" data-index={index}>
       <pre
         aria-hidden
-        className="font-mono text-ink/80 leading-[1] whitespace-pre"
+        className="font-mono text-ink leading-[1] whitespace-pre"
         style={{
-          fontSize: "clamp(6px, 0.9vw, 10px)",
+          fontSize: "clamp(8px, 1.15vw, 13px)",
           letterSpacing: "0px",
         }}
       >
@@ -110,19 +112,20 @@ export function IntroOverlay() {
         ))}
       </div>
 
-      <div className="intro-center relative z-10 max-w-[720px] px-6 text-center">
+      <div className="intro-center relative z-10 max-w-[760px] px-6 text-center">
         <p className="font-mono text-[11px] uppercase tracking-[0.35em] text-accent">
-          Pitchlink · Solana
+          Pitchlink · on-chain creator ads · Solana
         </p>
         <h1 className="mt-5 text-[40px] font-semibold leading-[1.02] tracking-[-0.03em] text-balance sm:text-[64px]">
-          Sponsors pay for clicks,
+          If your audience converts,
           <br />
-          not promises.
+          brands fight for you.
         </h1>
-        <p className="mx-auto mt-5 max-w-[48ch] text-[15px] leading-[1.55] text-graphite sm:text-[17px]">
-          Click-counted creator ads on-chain. Brands bid for a slot in
-          your next video; every click through your link is recorded on
-          Solana and pays you for the real conversion.
+        <p className="mx-auto mt-6 max-w-[54ch] text-[15px] leading-[1.6] text-graphite sm:text-[17px]">
+          Small creators with real action get bid up by brands who want
+          conversion — not reach. Every bid, every click, every payout
+          on Solana. No agencies. No rate cards. No DMs. The auction
+          sets the price, the chain proves the value.
         </p>
         <button
           type="button"

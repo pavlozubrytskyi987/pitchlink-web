@@ -384,11 +384,13 @@ body {
 
 .intro-tile {
   display: inline-block;
-  padding: 10px;
+  padding: 14px 16px;
   background: var(--color-paper);
-  border: 1px solid var(--color-hairline);
-  border-radius: 10px;
-  box-shadow: 0 6px 24px -14px rgb(0 0 0 / 0.18);
+  border: 1px solid var(--color-hairline-strong);
+  border-radius: 12px;
+  box-shadow:
+    0 2px 6px -2px rgb(0 0 0 / 0.08),
+    0 18px 40px -22px rgb(0 0 0 / 0.35);
   animation: intro-drift 14s ease-in-out infinite;
   transform-origin: center;
 }
@@ -400,13 +402,14 @@ body {
 }
 .intro-slot pre { margin: 0; }
 
-/* Six anchor points: two columns, three rows, pulled out to the edges. */
-.intro-slot-1 { top: 6%;  left: 5%;   animation-delay: 0.05s; }
-.intro-slot-2 { top: 8%;  right: 5%;  animation-delay: 0.12s; }
-.intro-slot-3 { top: 42%; left: 2%;   animation-delay: 0.19s; }
-.intro-slot-4 { top: 42%; right: 2%;  animation-delay: 0.26s; }
-.intro-slot-5 { bottom: 6%; left: 7%; animation-delay: 0.33s; }
-.intro-slot-6 { bottom: 8%; right: 7%; animation-delay: 0.40s; }
+/* Two columns pulled in close enough that the UGCs read as the headline's
+   backdrop, not corner decoration. */
+.intro-slot-1 { top: 4%;   left: 2.5%;   animation-delay: 0.05s; }
+.intro-slot-2 { top: 5%;   right: 2.5%;  animation-delay: 0.12s; }
+.intro-slot-3 { top: 38%;  left: 0.5%;   animation-delay: 0.19s; }
+.intro-slot-4 { top: 38%;  right: 0.5%;  animation-delay: 0.26s; }
+.intro-slot-5 { bottom: 4%; left: 4%;    animation-delay: 0.33s; }
+.intro-slot-6 { bottom: 5%; right: 4%;   animation-delay: 0.40s; }
 
 @keyframes intro-tile-in {
   from { opacity: 0; transform: translateY(12px) scale(0.96); }
