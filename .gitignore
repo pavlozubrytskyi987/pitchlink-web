@@ -13,3 +13,4 @@ public/creators/jayanth/
 tsconfig.tsbuildinfo
 .pitchlink/
 walkthrough/
+.vercel/

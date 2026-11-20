@@ -130,6 +130,20 @@ Do **not** put private keys in git or in `NEXT_PUBLIC_*` variables.
 DNS for pitchlink.xyz is intentionally left alone until the deploy is
 verified.
 
+## Live deployment (hackathon)
+
+- **App:** https://pitchlink-web.vercel.app
+- **Try live tracking:** https://pitchlink-web.vercel.app/try
+- **Creator profile:** https://pitchlink-web.vercel.app/creator/chef-dima
+- **Demo tracked link:** https://pitchlink-web.vercel.app/go/EEy75Zax
+  → 302 to `https://sabg.fun/?ref=EEy75Zax`
+- **ClickCounter PDA:**
+  [`9td96XuhcpwnNKEhFXe1TRDtcpFzcLdjYadybR5ecFsA`](https://explorer.solana.com/address/9td96XuhcpwnNKEhFXe1TRDtcpFzcLdjYadybR5ecFsA?cluster=devnet)
+
+Auction payments are enforced by the deployed program; sponsored-video
+delivery remains off-chain. Redirect counts are recorded redirects, not
+verified customers. The program is upgradeable (authority retained).
+
 ## Testing
 
 Everything below runs against devnet and produces inspectable
