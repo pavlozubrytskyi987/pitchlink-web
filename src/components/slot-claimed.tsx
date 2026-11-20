@@ -212,8 +212,12 @@ export function SlotClaimed({
           )}
 
           <p className="mt-2.5 text-[12.5px] leading-snug text-ash">
-            Each click through this link is recorded on Solana and becomes{" "}
-            {creator ? `${creator.name}’s` : "the creator’s"} conversion.
+            Each visit through this link submits a Solana transaction that
+            updates a public counter.
+          </p>
+          <p className="mt-2 border-t border-hairline pt-2.5 text-[12px] leading-snug text-ash">
+            Solana verifies the auction&rsquo;s recorded financial actions.
+            Recorded redirect events are not the same as verified customers.
           </p>
         </div>
       </div>

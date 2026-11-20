@@ -492,6 +492,11 @@ export function AuctionPanel() {
           {notice}
         </p>
       ) : null}
+
+      <p className="mt-4 border-t border-hairline pt-3 text-[12px] leading-snug text-ash">
+        Solana verifies the auction&rsquo;s recorded financial actions.
+        Recorded redirect events are not the same as verified customers.
+      </p>
     </aside>
   );
 }
