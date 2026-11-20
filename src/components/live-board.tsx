@@ -215,14 +215,35 @@ export function LiveBoard({ creators = CREATORS, live }: Props) {
       <main className="mx-auto max-w-[1320px] px-5 pb-20 sm:px-8">
         <section className="grid gap-10 pb-12 pt-12 sm:pt-16 md:grid-cols-[minmax(0,1fr)_300px] md:items-end md:gap-12 lg:grid-cols-[minmax(0,1fr)_340px] lg:gap-20 lg:pb-14">
           <div className="min-w-0">
-            <h1 className="max-w-[16ch] text-[40px] font-semibold leading-[1.02] tracking-[-0.03em] text-balance sm:text-[58px]">
+            <p className="font-mono text-[11px] uppercase tracking-[0.25em] text-accent">
+              On-chain creator ads · Solana
+            </p>
+            <h1 className="mt-4 max-w-[16ch] text-[40px] font-semibold leading-[1.02] tracking-[-0.03em] text-balance sm:text-[58px]">
               Creator ad slots, priced by real conversion.
             </h1>
             <p className="mt-6 max-w-[58ch] text-[16px] leading-[1.6] text-graphite sm:text-[17px]">
-              Brands bid SOL for a slot in a crypto creator&rsquo;s next video.
-              The winner gets a tracked link, and every click through it is
-              recorded on Solana, so creators earn on verified conversion.
+              Pitchlink is an on-chain ad marketplace for small crypto
+              creators. Brands bid SOL for one slot in a creator&rsquo;s
+              next video, the winner gets a tracked link, and every click
+              through it is counted on Solana. Creators get paid for what
+              their audience actually does — not for follower count.
             </p>
+            <div className="mt-7 flex flex-wrap items-center gap-3">
+              <Link
+                href="/auction"
+                className="inline-flex h-12 items-center gap-2 rounded-full bg-ink px-6 text-[14px] font-medium text-paper shadow-[0_10px_28px_-14px_rgb(0_0_0/0.45)] transition-colors hover:bg-[#262626]"
+              >
+                Enter the live auction
+                <span aria-hidden>→</span>
+              </Link>
+              <a
+                href="#how-it-works"
+                className="inline-flex h-12 items-center gap-2 rounded-full border border-hairline-strong px-5 text-[14px] text-ink transition-colors hover:border-ink"
+              >
+                How it works
+                <span aria-hidden>↓</span>
+              </a>
+            </div>
           </div>
           <ProofList programId={PROGRAM_ID} auctionAddress={heroChain?.address ?? null} />
         </section>
@@ -230,14 +251,19 @@ export function LiveBoard({ creators = CREATORS, live }: Props) {
         <HowItWorks />
 
         <div className="mt-16 flex flex-wrap items-end justify-between gap-x-6 gap-y-3 border-b border-hairline pb-4 sm:mt-20">
-          <div className="flex min-w-0 items-baseline gap-3">
-            <h2 className="text-[24px] font-semibold leading-none tracking-[-0.025em] sm:text-[28px]">
-              Up for auction
-            </h2>
-            <span className="text-[13.5px] text-ash">
-              {creators.length} {creators.length === 1 ? "creator" : "creators"},{" "}
-              {liveCount} live now
-            </span>
+          <div className="flex min-w-0 flex-col gap-1">
+            <div className="flex items-baseline gap-3">
+              <h2 className="text-[24px] font-semibold leading-none tracking-[-0.025em] sm:text-[28px]">
+                Up for auction
+              </h2>
+              <span className="text-[13.5px] text-ash">
+                {creators.length} {creators.length === 1 ? "creator" : "creators"},{" "}
+                {liveCount} live now
+              </span>
+            </div>
+            <p className="text-[13px] text-ash">
+              Click a tile to open the live auction and place a bid.
+            </p>
           </div>
           <div className="flex items-center gap-5" role="group" aria-label="Sort creators">
             {SORTS.map((option) => (
@@ -324,7 +350,11 @@ const STEPS = [
 
 function HowItWorks() {
   return (
-    <ol className="grid gap-px border-y border-hairline sm:grid-cols-3" aria-label="How it works">
+    <ol
+      id="how-it-works"
+      className="scroll-mt-24 grid gap-px border-y border-hairline sm:grid-cols-3"
+      aria-label="How it works"
+    >
       {STEPS.map((step, i) => (
         <li
           key={step.title}
