@@ -13,10 +13,13 @@ import { PublicKey } from "@solana/web3.js";
 import { useEffect, useState } from "react";
 import type { Creator } from "@/data/creators";
 import { getFeedSnapshot, pushRealBid } from "@/lib/bid-feed";
+import { auctionOverride } from "@/lib/demo-auction";
 import { shortAddress } from "@/lib/explorer";
 
 export type HeroAuction = {
   address: string;
+  /** Creator the auction pays out to (drives click-count lookup). */
+  creator: string;
   /** 0 when nobody has bid yet. */
   currentBidSol: number;
   endsAt: number;
@@ -44,14 +47,17 @@ export function useHeroAuction(hero: Creator | undefined): HeroAuction | null {
 
     (async () => {
       const program = await import("@/lib/program");
-      const creator = new PublicKey(creatorKey);
+      const override = auctionOverride();
 
       const readAuction = async () => {
-        const auction = await program.getAuction(connection, creator);
+        const auction = override
+          ? await program.fetchAuctionByAddress(connection, new PublicKey(override))
+          : await program.getAuction(connection, new PublicKey(creatorKey));
         if (!alive || !auction) return auction;
         const hasBid = auction.highestBid > BigInt(0);
         setState({
           address: auction.publicKey.toBase58(),
+          creator: auction.creator.toBase58(),
           currentBidSol: toSol(auction.highestBid),
           endsAt: auction.endTs,
           settled: auction.settled,

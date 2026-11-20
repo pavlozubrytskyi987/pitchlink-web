@@ -8,8 +8,10 @@ import { useClaim } from "@/components/claim-context";
 import { pushRealBid } from "@/lib/bid-feed";
 import { brandFor } from "@/data/brands";
 import { CREATORS, HERO_CREATOR_PUBKEY, MIN_BID_SOL } from "@/data/creators";
+import { auctionOverride } from "@/lib/demo-auction";
 import { explorerAddress, explorerTx } from "@/lib/explorer";
 import {
+  fetchAuctionByAddress,
   findAuction,
   getBids,
   initializeAuction,
@@ -44,7 +46,10 @@ export function AuctionPanel() {
   const [settleSig, setSettleSig] = useState<string | null>(null);
 
   const refresh = useCallback(async () => {
-    const next = await findAuction(connection);
+    const override = auctionOverride();
+    const next = override
+      ? await fetchAuctionByAddress(connection, new PublicKey(override))
+      : await findAuction(connection);
     setAuction(next);
     setBids(next ? await getBids(connection, next.publicKey) : []);
     return next;

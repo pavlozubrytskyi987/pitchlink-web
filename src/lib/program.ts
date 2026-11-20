@@ -172,6 +172,17 @@ export async function getAuction(
   return toAuction(address, account as RawAuction);
 }
 
+/** Fetch a specific auction account by address (used by the ?auction= demo override). */
+export async function fetchAuctionByAddress(
+  connection: Connection,
+  address: PublicKey,
+): Promise<AuctionAccount | null> {
+  const program = getPitchlinkProgram(connection);
+  const account = await auctionClient(program).fetchNullable(address);
+  if (!account) return null;
+  return toAuction(address, account as RawAuction);
+}
+
 export async function initializeAuction(
   connection: Connection,
   wallet: PitchlinkWallet,

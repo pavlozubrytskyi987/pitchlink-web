@@ -287,9 +287,8 @@ export function LiveBoard({ creators = CREATORS, live }: Props) {
               creator={hero}
               chain={heroChain}
               clicks={
-                hero.auctionCreatorPubkey &&
-                hero.auctionCreatorPubkey in clicksByCreator
-                  ? clicksByCreator[hero.auctionCreatorPubkey]
+                heroChain?.creator && heroChain.creator in clicksByCreator
+                  ? clicksByCreator[heroChain.creator]
                   : null
               }
               bidSignature={latestReal[hero.slug]?.signature ?? null}

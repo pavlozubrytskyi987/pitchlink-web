@@ -4,6 +4,7 @@ import { useConnection } from "@solana/wallet-adapter-react";
 import { useEffect, useState } from "react";
 import { ExternalIcon } from "@/components/icons";
 import { brandFor } from "@/data/brands";
+import { auctionOverride } from "@/lib/demo-auction";
 import { explorerAddress, explorerTx, shortAddress } from "@/lib/explorer";
 import { findAuction, getAllBids, type BidRecord } from "@/lib/program";
 
@@ -43,7 +44,7 @@ export function PastBids() {
       .then(([rows, live]) => {
         // Keep the label honest: bids on the live auction are shown in the
         // panel above, so this history lists only earlier auctions.
-        const liveKey = live?.publicKey.toBase58();
+        const liveKey = auctionOverride() ?? live?.publicKey.toBase58();
         if (alive) {
           setBids(
             liveKey

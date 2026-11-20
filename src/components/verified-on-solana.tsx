@@ -3,6 +3,7 @@
 import { useConnection } from "@solana/wallet-adapter-react";
 import { useEffect, useState } from "react";
 import { ExternalIcon } from "@/components/icons";
+import { TRACKED_COUNTER_CREATORS } from "@/data/creators";
 import { PROGRAM_ID } from "@/lib/config";
 import { explorerAddress, explorerTx, shortAddress } from "@/lib/explorer";
 import type { BidRecord } from "@/lib/program";
@@ -95,7 +96,9 @@ export function VerifiedOnSolana({
       const res = await fetch("/api/links");
       if (!res.ok) return;
       const rows = (await res.json()) as LinkRow[];
-      const row = rows.find((r) => r.creator === creatorPubkey);
+      // Most recent tracked link across the creators the UI covers (hero
+      // plus the demo creator), newest first from the API.
+      const row = rows.find((r) => TRACKED_COUNTER_CREATORS.includes(r.creator));
       if (!row) return;
       const program = await import("@/lib/program");
       if (alive) {

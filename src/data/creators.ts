@@ -10,6 +10,17 @@
 export const HERO_CREATOR_PUBKEY: string | null =
   "3na5fsd9VtLb3JzGbYg75dRXPw3a4vLpafh7R8VpuK3x";
 
+/** Fresh wallet for the recorded 3-minute demo auction. Its tracked-link
+    ClickCounter rows surface confirmed redirect counts in the UI. */
+export const DEMO_CREATOR_PUBKEY: string | null =
+  "Bg7Aw5dCYqePvV41M8dLjG7FS4NWEz8Nrw21ZF4FiNRy";
+
+/** Creator wallets whose on-chain tracked-link counters the UI surfaces. */
+export const TRACKED_COUNTER_CREATORS: readonly string[] = [
+  HERO_CREATOR_PUBKEY,
+  DEMO_CREATOR_PUBKEY,
+].filter((key): key is string => Boolean(key));
+
 /** Floor the UI enforces on bid inputs. The program itself just requires > current. */
 export const MIN_BID_SOL = 0.05;
 
