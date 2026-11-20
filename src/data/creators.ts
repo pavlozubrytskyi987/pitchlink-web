@@ -10,10 +10,10 @@
 export const HERO_CREATOR_PUBKEY: string | null =
   "3na5fsd9VtLb3JzGbYg75dRXPw3a4vLpafh7R8VpuK3x";
 
-/** Fresh wallet for the recorded 3-minute demo auction. Its tracked-link
+/** Fresh wallet for the recorded live demo auction. Its tracked-link
     ClickCounter rows surface confirmed redirect counts in the UI. */
 export const DEMO_CREATOR_PUBKEY: string | null =
-  "Bg7Aw5dCYqePvV41M8dLjG7FS4NWEz8Nrw21ZF4FiNRy";
+  "DTFVJ2JTaW6PbAr4J5nhwCjW7hyruGDy7dw6TyokQQ56";
 
 /** Creator wallets whose on-chain tracked-link counters the UI surfaces. */
 export const TRACKED_COUNTER_CREATORS: readonly string[] = [
