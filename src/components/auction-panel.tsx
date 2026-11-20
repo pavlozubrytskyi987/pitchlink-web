@@ -227,7 +227,7 @@ export function AuctionPanel() {
       : BigInt(Math.round(MIN_BID_SOL * 1e9));
 
   return (
-    <aside className="flex h-full min-h-[480px] flex-col rounded-[14px] border border-hairline bg-paper p-5 sm:min-h-[560px]">
+    <aside className="flex flex-col self-start rounded-[14px] border border-hairline bg-paper p-5">
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-baseline gap-3">
           <h2 className="text-[18px] font-semibold leading-none tracking-[-0.02em]">Auction</h2>
@@ -273,7 +273,7 @@ export function AuctionPanel() {
                     <span className="font-sans text-[14px] tracking-normal text-graphite">SOL</span>
                   </>
                 ) : (
-                  <span className="text-ash">No bids</span>
+                  <span className="text-ash">No bids yet</span>
                 )}
               </p>
               <p
@@ -294,21 +294,27 @@ export function AuctionPanel() {
                     : "Ended"}
               </p>
             </div>
-            <dl className="mt-4 divide-y divide-hairline border-y border-hairline text-[13px]">
-              {winnerKey ? (
-                <Row label={auction.settled ? "Winner" : "Leading"}>
-                  <AddressLink address={winnerKey} />
+            <details className="group mt-4 rounded-[12px] border border-hairline bg-wash">
+              <summary className="cursor-pointer list-none px-3.5 py-2.5 text-[13px] font-medium text-ink transition-colors hover:text-accent [&::-webkit-details-marker]:hidden">
+                On-chain details
+                <span className="float-right text-ash transition-transform group-open:rotate-45">+</span>
+              </summary>
+              <dl className="divide-y divide-hairline border-t border-hairline px-3.5 text-[13px]">
+                {winnerKey ? (
+                  <Row label={auction.settled ? "Winner" : "Leading"}>
+                    <AddressLink address={winnerKey} />
+                  </Row>
+                ) : null}
+                <Row label="Pays out to">
+                  <AddressLink address={auction.creator.toBase58()} />
                 </Row>
-              ) : null}
-              <Row label="Pays out to">
-                <AddressLink address={auction.creator.toBase58()} />
-              </Row>
-              {treasury ? (
-                <Row label="Escrow">
-                  <AddressLink address={treasury.toBase58()} />
-                </Row>
-              ) : null}
-            </dl>
+                {treasury ? (
+                  <Row label="Escrow">
+                    <AddressLink address={treasury.toBase58()} />
+                  </Row>
+                ) : null}
+              </dl>
+            </details>
           </div>
 
           {status === "ended-no-bids" ? (
@@ -412,14 +418,14 @@ export function AuctionPanel() {
                   <p>The creator can’t bid on their own auction.</p>
                 ) : null}
                 <p>
-                  Bids are escrowed by the program. If you&rsquo;re outbid,
-                  you&rsquo;re refunded in the same transaction.
+                  Bids sit in program-controlled escrow — outbid? You&rsquo;re
+                  refunded in the same transaction.
                 </p>
               </div>
             </>
           ) : null}
 
-          <div className="mt-5 min-h-0 flex-1 overflow-y-auto">
+          <div className="mt-5 max-h-[220px] overflow-y-auto">
             <div className="flex items-baseline justify-between">
               <p className={LABEL}>Bids, verified on Solana</p>
               {bids.length ? (
@@ -533,8 +539,9 @@ export function AuctionPanel() {
       ) : null}
 
       <p className="mt-4 border-t border-hairline pt-3 text-[12px] leading-snug text-ash">
-        Solana verifies the auction&rsquo;s recorded financial actions.
-        Recorded redirect events are not the same as verified customers.
+        The deployed Solana program enforces the current auction, escrow,
+        refund, and settlement rules. Recorded redirect events are not
+        verified customers.
       </p>
     </aside>
   );

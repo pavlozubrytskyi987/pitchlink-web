@@ -150,7 +150,7 @@ export function VerifiedOnSolana({
               target="_blank"
               rel="noopener noreferrer"
               title="Open this transaction on Solana Explorer (devnet)"
-              className="group rounded-[12px] border border-hairline bg-paper p-4 transition-colors hover:border-accent/40"
+              className="group min-w-0 rounded-[12px] border border-hairline bg-paper p-4 transition-colors hover:border-accent/40"
             >
               <p className="flex items-center justify-between gap-2 text-[14px] font-medium text-ink">
                 {proof.title}
@@ -252,7 +252,8 @@ export function VerifiedOnSolana({
           <div className="mt-4 space-y-2 border-t border-hairline pt-4 text-[13px] leading-[1.6] text-graphite">
             <p>
               <span className="font-medium text-ink">V1 — today:</span>{" "}
-              programmable escrow and on-chain auction records.
+              the deployed Solana program enforces the current auction,
+              escrow, refund, and settlement rules.
             </p>
             <p>
               <span className="font-medium text-ink">V2 — planned:</span>{" "}

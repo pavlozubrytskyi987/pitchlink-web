@@ -55,14 +55,15 @@ export function PastBids() {
     <section className="mx-auto w-full max-w-[1320px] px-5 pb-16 sm:px-8">
       <div className="flex items-baseline justify-between gap-3 border-t border-hairline pt-6">
         <h2 className="text-[20px] font-semibold tracking-[-0.02em] sm:text-[22px]">
-          Past bids
+          Historical devnet bids
         </h2>
         {bids?.length ? (
           <p className="text-[12px] tabular-nums text-ash">{bids.length}</p>
         ) : null}
       </div>
       <p className="mt-1 text-[12.5px] text-ash">
-        Every BidPlaced event from the Pitchlink program on devnet, newest first.
+        Confirmed bids from earlier auctions run by this program — not bids on
+        the auction shown above.
       </p>
 
       {bids === null && !error ? (
@@ -99,22 +100,33 @@ export function PastBids() {
                       className="size-8 shrink-0 rounded-[6px] bg-ink object-contain p-1"
                     />
                   ) : (
-                    <span className="grid size-8 shrink-0 place-items-center rounded-[6px] bg-wash text-[10px] font-medium uppercase tracking-[0.1em] text-ash">
-                      ?
+                    <span className="grid size-8 shrink-0 place-items-center rounded-[6px] bg-wash font-mono text-[10px] uppercase tracking-[0.05em] text-ash">
+                      {bidder.slice(0, 2)}
                     </span>
                   )}
                   <div className="min-w-0">
                     <p className="truncate text-[13.5px] font-medium">
-                      {brand ? brand.name : "Unknown bidder"}
+                      {brand ? brand.name : (
+                        <a
+                          href={explorerAddress(bidder)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="font-mono text-[13px] hover:text-accent"
+                        >
+                          {shortAddress(bidder)}
+                        </a>
+                      )}
                     </p>
-                    <a
-                      href={explorerAddress(bidder)}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="truncate font-mono text-[11.5px] text-ash hover:text-ink"
-                    >
-                      {shortAddress(bidder)}
-                    </a>
+                    {brand ? (
+                      <a
+                        href={explorerAddress(bidder)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="truncate font-mono text-[11.5px] text-ash hover:text-ink"
+                      >
+                        {shortAddress(bidder)}
+                      </a>
+                    ) : null}
                   </div>
                 </div>
                 <div className="ml-auto flex shrink-0 items-center gap-4">

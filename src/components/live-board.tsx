@@ -221,10 +221,9 @@ export function LiveBoard({ creators = CREATORS, live }: Props) {
               Your audience is worth more than your follower count.
             </h1>
             <p className="mt-5 max-w-[58ch] text-[16px] leading-[1.6] text-graphite sm:text-[17px]">
-              Pitchlink is a sponsorship marketplace where crypto creators
-              auction ad placements in their videos. Brands bid SOL, creators
-              get paid through on-chain settlement, and auction activity is
-              publicly inspectable.
+              Crypto creators auction video sponsorships. Brands bid SOL,
+              creators get paid through on-chain settlement, and every
+              transaction is publicly inspectable.
             </p>
             <div className="mt-7 flex flex-wrap items-center gap-3">
               <a
@@ -356,76 +355,34 @@ export function LiveBoard({ creators = CREATORS, live }: Props) {
 
 const STEPS = [
   {
-    title: "Bid SOL",
-    body: "Bids sit in on-chain escrow. If you're outbid, you're refunded in the same transaction.",
+    title: "List",
+    body: "Creators auction video sponsorships.",
   },
   {
-    title: "Win the slot",
-    body: "The top bid pays the creator when the auction closes, and your logo goes in the video.",
+    title: "Bid",
+    body: "Advertisers compete using SOL.",
   },
   {
-    title: "Track redirect activity",
-    body: "Every tracked-link visit submits a Solana transaction; confirmed updates appear on a public counter.",
+    title: "Settle",
+    body: "The program enforces refunds and payouts.",
   },
-];
-
-const SCOPE_LIVE = [
-  "Creator auctions",
-  "SOL bidding",
-  "Program-controlled escrow",
-  "Atomic outbid refunds",
-  "Settlement",
-  "Tracked-link counter updates",
-];
-
-const SCOPE_PLANNED = [
-  "Advertiser conversion integrations",
-  "Qualifying on-chain action verification",
-  "Creator performance history",
-  "Better attribution and anti-abuse controls",
 ];
 
 function ScopeSection() {
   return (
     <section
-      aria-label="What is live versus planned"
-      className="mt-16 grid gap-10 sm:mt-20 sm:grid-cols-2 sm:gap-12"
+      aria-label="What is built versus planned"
+      className="mt-10 grid gap-4 sm:mt-12 sm:grid-cols-2 sm:gap-12"
     >
-      <div>
-        <h3 className="text-[15px] font-semibold tracking-[-0.01em]">
-          Live on devnet
-        </h3>
-        <ul className="mt-4 divide-y divide-hairline border-y border-hairline">
-          {SCOPE_LIVE.map((item) => (
-            <li
-              key={item}
-              className="flex items-center gap-2.5 py-2.5 text-[14px] text-graphite"
-            >
-              <span className="size-[5px] shrink-0 rounded-full bg-accent" aria-hidden />
-              {item}
-            </li>
-          ))}
-        </ul>
-      </div>
-      <div>
-        <h3 className="text-[15px] font-semibold tracking-[-0.01em] text-ash">
-          Planned
-        </h3>
-        <ul className="mt-4 divide-y divide-hairline border-y border-hairline">
-          {SCOPE_PLANNED.map((item) => (
-            <li
-              key={item}
-              className="flex items-center gap-2.5 py-2.5 text-[14px] text-ash"
-            >
-              <span
-                className="size-[5px] shrink-0 rounded-full border border-hairline-strong"
-                aria-hidden
-              />
-              {item}
-            </li>
-          ))}
-        </ul>
-      </div>
+      <p className="text-[14px] leading-[1.6] text-graphite">
+        <span className="font-medium text-ink">Built today:</span> on-chain
+        auctions, SOL escrow, atomic refunds, settlement, and recorded
+        redirect events.
+      </p>
+      <p className="text-[14px] leading-[1.6] text-ash">
+        <span className="font-medium">Coming next:</span> verifiable
+        conversions and portable creator performance history.
+      </p>
     </section>
   );
 }
