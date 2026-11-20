@@ -13,14 +13,17 @@ echo "Copy these from: QuickNode dashboard -> your endpoint -> API access URL (H
 echo
 
 read -r -p "Base URL (e.g. https://your-name.solana-devnet.quiknode.pro): " BASE
-read -r -s -p "Auth token (typing hidden): " TOKEN
-echo
-echo
+read -r -p "Auth token (visible so you can confirm the paste): " TOKEN
 
-# Normalize: strip trailing slash from base, any slashes from token.
+# Normalize: strip whitespace everywhere, trailing slash from base,
+# any slashes from token.
+BASE=$(echo "$BASE" | tr -d '[:space:]')
+TOKEN=$(echo "$TOKEN" | tr -d '[:space:]')
 BASE="${BASE%/}"
 TOKEN="${TOKEN#/}"
 TOKEN="${TOKEN%/}"
+
+echo "Read: base=$BASE  token=<${#TOKEN} chars>"
 
 if [[ "$BASE" != https://* ]]; then
   echo "ERROR: Base URL must start with https://"
