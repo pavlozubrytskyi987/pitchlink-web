@@ -14,7 +14,7 @@ const CLIPS = [
 
 // Bump the version suffix any time the intro copy changes so returning
 // visitors see the new framing instead of their old dismissed flag.
-const STORAGE_KEY = "pitchlink-intro-dismissed-v2";
+const STORAGE_KEY = "pitchlink-intro-dismissed-v3";
 
 type AsciiClip = {
   cols: number;
@@ -78,7 +78,18 @@ export function IntroOverlay() {
   const [leaving, setLeaving] = useState(false);
 
   useEffect(() => {
+    // ?intro=1 forces the overlay open; ?intro=0 forces it closed.
     try {
+      const params = new URLSearchParams(window.location.search);
+      const force = params.get("intro");
+      if (force === "1") {
+        setDismissed(false);
+        return;
+      }
+      if (force === "0") {
+        setDismissed(true);
+        return;
+      }
       setDismissed(localStorage.getItem(STORAGE_KEY) === "1");
     } catch {
       setDismissed(false);
