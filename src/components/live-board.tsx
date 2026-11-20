@@ -15,6 +15,7 @@ import { CreatorTile, type TileLive } from "@/components/creator-tile";
 import { CREATORS, type Creator } from "@/data/creators";
 import { ProofList } from "@/components/chain-status";
 import { SiteHeader } from "@/components/site-header";
+import { VerifiedOnSolana } from "@/components/verified-on-solana";
 import { subscribeFeed, type BidEntry } from "@/lib/bid-feed";
 import { PROGRAM_ID } from "@/lib/config";
 import { useAllClicks } from "@/lib/use-all-clicks";
@@ -219,10 +220,10 @@ export function LiveBoard({ creators = CREATORS, live }: Props) {
               Your audience is worth more than your follower count.
             </h1>
             <p className="mt-6 max-w-[58ch] text-[16px] leading-[1.6] text-graphite sm:text-[17px]">
-              Small crypto creators can auction sponsorship slots in their
-              videos. Brands bid SOL, the auction runs through
-              program-controlled escrow, and the results are publicly
-              inspectable on Solana.
+              Pitchlink is a sponsorship marketplace where crypto creators
+              auction ad placements in their videos. Brands bid SOL, creators
+              get paid through on-chain settlement, and auction activity is
+              publicly inspectable.
             </p>
             <div className="mt-7 flex flex-wrap items-center gap-3">
               <a
@@ -236,7 +237,7 @@ export function LiveBoard({ creators = CREATORS, live }: Props) {
                 href="/auction"
                 className="inline-flex h-12 items-center gap-2 rounded-full border border-hairline-strong px-5 text-[14px] text-ink transition-colors hover:border-ink"
               >
-                Create an ad slot
+                List a sponsorship
                 <span aria-hidden>→</span>
               </Link>
             </div>
@@ -246,9 +247,6 @@ export function LiveBoard({ creators = CREATORS, live }: Props) {
           </div>
           <ProofList programId={PROGRAM_ID} auctionAddress={heroChain?.address ?? null} />
         </section>
-
-        <HowItWorks />
-        <ScopeSection />
 
         <div
           id="up-for-auction"
@@ -325,6 +323,13 @@ export function LiveBoard({ creators = CREATORS, live }: Props) {
             );
           })}
         </div>
+
+        <HowItWorks />
+        <ScopeSection />
+        <VerifiedOnSolana
+          auctionAddress={heroChain?.address ?? null}
+          creatorPubkey={hero?.auctionCreatorPubkey ?? null}
+        />
 
         <p className="mt-20 max-w-[72ch] border-t border-hairline pt-5 text-[12.5px] leading-relaxed text-ash">
           Every number in this app is on-chain and checkable on Solana devnet:

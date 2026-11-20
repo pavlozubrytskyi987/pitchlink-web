@@ -5,13 +5,13 @@
    "verified on Solana" or "live". Everything else is ink on paper. */
 @theme {
   --color-paper: #ffffff;
-  --color-wash: #f4f4f3;
-  --color-ink: #000000;
-  --color-graphite: #565656;
-  --color-ash: #9a9a98;
-  --color-hairline: #e7e7e5;
-  --color-hairline-strong: #d2d2cf;
-  --color-accent: #1336c9;
+  --color-wash: #f8f9fc;
+  --color-ink: #111318;
+  --color-graphite: #69707d;
+  --color-ash: #9aa1ad;
+  --color-hairline: #e7eaf0;
+  --color-hairline-strong: #d5dae3;
+  --color-accent: #5265e8;
   --color-alert: #c4161c;
 
   --font-sans:
