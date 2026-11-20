@@ -4,7 +4,7 @@ import { useAnchorWallet, useConnection } from "@solana/wallet-adapter-react";
 import { PublicKey } from "@solana/web3.js";
 import { useCallback, useEffect, useState } from "react";
 import { CheckIcon, ExternalIcon } from "@/components/icons";
-import { useLogoDraft } from "@/components/logo-draft";
+import { useClaim } from "@/components/claim-context";
 import { pushRealBid } from "@/lib/bid-feed";
 import { brandFor } from "@/data/brands";
 import { CREATORS, HERO_CREATOR_PUBKEY, MIN_BID_SOL } from "@/data/creators";
@@ -31,7 +31,7 @@ const LAMPORTS = BigInt("1000000000");
 export function AuctionPanel() {
   const { connection } = useConnection();
   const wallet = useAnchorWallet();
-  const { setSettled, setClaim } = useLogoDraft();
+  const { setClaim } = useClaim();
   const [auction, setAuction] = useState<AuctionAccount | null>(null);
   const [bids, setBids] = useState<BidRecord[]>([]);
   const [loading, setLoading] = useState(true);
@@ -105,10 +105,6 @@ export function AuctionPanel() {
             : "ended-no-bids"
           : "open";
   const urgent = remaining !== null && remaining > 0 && remaining < 3600;
-
-  useEffect(() => {
-    setSettled(Boolean(auction?.settled));
-  }, [auction, setSettled]);
 
   // Hand the settled result to the claim reveal (tracked-link handoff).
   useEffect(() => {

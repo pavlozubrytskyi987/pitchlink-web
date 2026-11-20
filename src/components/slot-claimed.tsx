@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { CheckIcon, ExternalIcon } from "@/components/icons";
-import type { SlotClaim } from "@/components/logo-draft";
+import type { SlotClaim } from "@/components/claim-context";
 import { CREATORS } from "@/data/creators";
 import { getOrMintTrackedLink, type TrackedLink } from "@/lib/claim-link";
 import { explorerAddress, explorerTx, shortAddress } from "@/lib/explorer";

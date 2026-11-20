@@ -6,7 +6,7 @@ import { ConnectionProvider, WalletProvider } from "@solana/wallet-adapter-react
 import { WalletModalProvider } from "@solana/wallet-adapter-react-ui";
 import { PhantomWalletAdapter } from "@solana/wallet-adapter-phantom";
 import { SolflareWalletAdapter } from "@solana/wallet-adapter-solflare";
-import { LogoDraftProvider } from "@/components/logo-draft";
+import { ClaimProvider } from "@/components/claim-context";
 import { rpcEndpoint } from "@/lib/config";
 
 export function Providers({ children }: { children: React.ReactNode }) {
@@ -23,7 +23,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
     <ConnectionProvider endpoint={endpoint}>
       <WalletProvider wallets={wallets} autoConnect>
         <WalletModalProvider>
-          <LogoDraftProvider>{children}</LogoDraftProvider>
+          <ClaimProvider>{children}</ClaimProvider>
         </WalletModalProvider>
       </WalletProvider>
     </ConnectionProvider>

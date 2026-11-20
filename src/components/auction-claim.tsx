@@ -1,6 +1,6 @@
 "use client";
 
-import { useLogoDraft } from "@/components/logo-draft";
+import { useClaim } from "@/components/claim-context";
 import { SlotClaimed } from "@/components/slot-claimed";
 import { brandFor } from "@/data/brands";
 
@@ -10,7 +10,7 @@ import { brandFor } from "@/data/brands";
  * fabricated upload.
  */
 export function AuctionClaim() {
-  const { claim } = useLogoDraft();
+  const { claim } = useClaim();
   if (!claim) return null;
   const brand = brandFor(claim.winner);
   return <SlotClaimed claim={claim} logoUrl={brand?.logo ?? null} />;
