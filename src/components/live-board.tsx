@@ -10,7 +10,6 @@ import {
   useState,
   useSyncExternalStore,
 } from "react";
-import { BidTicker } from "@/components/bid-ticker";
 import { CreatorTile, type TileLive } from "@/components/creator-tile";
 import { CREATORS, type Creator } from "@/data/creators";
 import { ProofList } from "@/components/chain-status";
@@ -210,9 +209,7 @@ export function LiveBoard({ creators = CREATORS, live }: Props) {
 
   return (
     <div className="min-h-screen bg-paper text-ink">
-      <SiteHeader>
-        <BidTicker />
-      </SiteHeader>
+      <SiteHeader />
 
       <main className="mx-auto max-w-[1320px] px-5 pb-20 sm:px-8">
         <section className="grid gap-8 pb-8 pt-10 sm:pt-12 md:grid-cols-[minmax(0,1fr)_300px] md:items-end md:gap-12 lg:grid-cols-[minmax(0,1fr)_340px] lg:gap-20">
@@ -220,10 +217,9 @@ export function LiveBoard({ creators = CREATORS, live }: Props) {
             <h1 className="max-w-[18ch] text-[40px] font-semibold leading-[1.02] tracking-[-0.03em] text-balance sm:text-[52px]">
               Your audience is worth more than your follower count.
             </h1>
-            <p className="mt-5 max-w-[58ch] text-[16px] leading-[1.6] text-graphite sm:text-[17px]">
+            <p className="mt-5 max-w-[52ch] text-[16px] leading-[1.6] text-graphite sm:text-[17px]">
               Crypto creators auction video sponsorships. Brands bid SOL,
-              creators get paid through on-chain settlement, and every
-              transaction is publicly inspectable.
+              creators get paid on-chain — every transaction publicly inspectable.
             </p>
             <div className="mt-7 flex flex-wrap items-center gap-3">
               <a

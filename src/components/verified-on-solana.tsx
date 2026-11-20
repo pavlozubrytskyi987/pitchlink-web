@@ -121,23 +121,6 @@ export function VerifiedOnSolana({
         </span>
       </div>
 
-      <ol className="mt-2 grid gap-px border-b border-hairline sm:grid-cols-5">
-        {LIFECYCLE.map((step, i) => (
-          <li
-            key={step.title}
-            className="py-5 sm:py-6 sm:pr-6 [&+li]:border-t [&+li]:border-hairline sm:[&+li]:border-l sm:[&+li]:border-t-0 sm:[&+li]:pl-5"
-          >
-            <span className="text-[13px] font-medium tabular-nums text-ash">
-              {i + 1}
-            </span>
-            <p className="mt-2 text-[14px] font-medium leading-snug">{step.title}</p>
-            <p className="mt-1.5 text-[13px] leading-[1.55] text-graphite">
-              {step.body}
-            </p>
-          </li>
-        ))}
-      </ol>
-
       <div className="mt-6">
         <p className="text-[12.5px] uppercase tracking-[0.12em] text-ash">
           Proof — historical devnet transactions from this deployed program
@@ -215,7 +198,25 @@ export function VerifiedOnSolana({
           <span className="float-right text-ash transition-transform group-open:rotate-45">+</span>
         </summary>
         <div className="border-t border-hairline px-4 py-4">
-          <dl className="divide-y divide-hairline text-[13px]">
+          <p className="text-[12.5px] uppercase tracking-[0.12em] text-ash">
+            How it works
+          </p>
+          <ol className="mt-3 grid gap-3 sm:grid-cols-5">
+            {LIFECYCLE.map((step, i) => (
+              <li key={step.title}>
+                <span className="text-[13px] font-medium tabular-nums text-ash">
+                  {i + 1}
+                </span>
+                <p className="mt-1.5 text-[13.5px] font-medium leading-snug">
+                  {step.title}
+                </p>
+                <p className="mt-1 text-[12.5px] leading-[1.55] text-graphite">
+                  {step.body}
+                </p>
+              </li>
+            ))}
+          </ol>
+          <dl className="mt-4 divide-y divide-hairline border-t border-hairline text-[13px]">
             <DetailRow label="Program ID">
               <AddressLink address={PROGRAM_ID} />
             </DetailRow>

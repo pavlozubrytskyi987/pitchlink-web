@@ -53,18 +53,26 @@ export function PastBids() {
 
   return (
     <section className="mx-auto w-full max-w-[1320px] px-5 pb-16 sm:px-8">
-      <div className="flex items-baseline justify-between gap-3 border-t border-hairline pt-6">
-        <h2 className="text-[20px] font-semibold tracking-[-0.02em] sm:text-[22px]">
-          Historical devnet bids
-        </h2>
-        {bids?.length ? (
-          <p className="text-[12px] tabular-nums text-ash">{bids.length}</p>
-        ) : null}
-      </div>
-      <p className="mt-1 text-[12.5px] text-ash">
-        Confirmed bids from earlier auctions run by this program — not bids on
-        the auction shown above.
-      </p>
+      <details className="group mt-8 border-t border-hairline pt-2">
+        <summary className="flex cursor-pointer list-none items-baseline justify-between gap-3 pt-4 [&::-webkit-details-marker]:hidden">
+          <h2 className="text-[20px] font-semibold tracking-[-0.02em] transition-colors hover:text-accent sm:text-[22px]">
+            Historical devnet bids
+          </h2>
+          <span className="flex items-baseline gap-3">
+            {bids?.length ? (
+              <span className="text-[12px] tabular-nums text-ash">
+                {bids.length}
+              </span>
+            ) : null}
+            <span className="text-ash transition-transform group-open:rotate-45">
+              +
+            </span>
+          </span>
+        </summary>
+        <p className="mt-1 text-[12.5px] text-ash">
+          Confirmed bids from earlier auctions run by this program — not bids on
+          the auction shown above.
+        </p>
 
       {bids === null && !error ? (
         <p className="mt-6 text-[13px] text-ash">Loading…</p>
@@ -159,6 +167,7 @@ export function PastBids() {
           })}
         </ul>
       )}
+      </details>
     </section>
   );
 }

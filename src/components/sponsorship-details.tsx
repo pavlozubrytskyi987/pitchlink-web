@@ -11,21 +11,10 @@ const LABEL = "text-[12.5px] uppercase tracking-[0.12em] text-ash";
 export function SponsorshipDetails({ creator }: { creator: Creator }) {
   return (
     <div className="flex min-w-0 flex-col">
-      {/* Compact visual header: the creator's directory gradient. No stock
-          imagery, no invented thumbnails. */}
-      <div className="relative h-28 overflow-hidden rounded-[14px] border border-hairline sm:h-32">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={creator.posterUrl}
-          alt=""
-          className="absolute inset-0 size-full object-cover"
-        />
-        <span className="absolute left-4 top-4 inline-flex items-center gap-1.5 rounded-full bg-paper px-2.5 py-1 text-[12px] font-medium text-accent shadow-[0_1px_3px_rgb(0_0_0/0.08)]">
-          Video sponsorship
-        </span>
-      </div>
-
-      <h1 className="mt-5 text-[28px] font-semibold leading-[1.1] tracking-[-0.025em] text-balance sm:text-[32px]">
+      <p className="text-[12.5px] uppercase tracking-[0.12em] text-ash">
+        Video sponsorship
+      </p>
+      <h1 className="mt-2 text-[28px] font-semibold leading-[1.1] tracking-[-0.025em] text-balance sm:text-[32px]">
         Sponsor {creator.name}&rsquo;s next video
       </h1>
 
@@ -55,15 +44,15 @@ export function SponsorshipDetails({ creator }: { creator: Creator }) {
         <ul className="mt-3 space-y-2 text-[14px] leading-[1.5] text-graphite">
           <Benefit>
             <span className="font-medium text-ink">Video sponsorship</span>
-            {" — "}a sponsor placement in {creator.name}&rsquo;s next video.
+            {" — "}placement in the next video.
           </Benefit>
           <Benefit>
             <span className="font-medium text-ink">Tracked advertiser link</span>
-            {" — "}redirects can produce publicly verifiable on-chain counter updates.
+            {" — "}on-chain redirect counter.
           </Benefit>
           <Benefit>
             <span className="font-medium text-ink">Public auction records</span>
-            {" — "}every bid, refund, and payout inspectable on Solana Explorer.
+            {" — "}verifiable on Solana Explorer.
           </Benefit>
         </ul>
       </div>
