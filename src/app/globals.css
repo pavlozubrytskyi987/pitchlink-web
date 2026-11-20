@@ -237,8 +237,8 @@ body {
 .claim-scrim {
   background: radial-gradient(
     ellipse at 50% 45%,
-    rgb(255 255 255 / 0) 30%,
-    rgb(255 255 255 / 0.85) 85%
+    rgb(255 255 255 / 0.9) 30%,
+    rgb(255 255 255 / 0.97) 85%
   );
   animation: claim-fade 0.6s ease-out both;
 }

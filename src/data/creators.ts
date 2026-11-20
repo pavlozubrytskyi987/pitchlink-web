@@ -13,7 +13,7 @@ export const HERO_CREATOR_PUBKEY: string | null =
 /** Fresh wallet for the recorded live demo auction. Its tracked-link
     ClickCounter rows surface confirmed redirect counts in the UI. */
 export const DEMO_CREATOR_PUBKEY: string | null =
-  "DTFVJ2JTaW6PbAr4J5nhwCjW7hyruGDy7dw6TyokQQ56";
+  "FGNVrmEN2yaRm1sU8zwyoyrC1Soahr6hKcZ8fJhCQLpQ";
 
 /** Creator wallets whose on-chain tracked-link counters the UI surfaces. */
 export const TRACKED_COUNTER_CREATORS: readonly string[] = [

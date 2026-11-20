@@ -86,7 +86,7 @@ export function SlotClaimed({
   }
 
   return (
-    <div className="claim-root pointer-events-none absolute inset-0 z-20 overflow-hidden">
+    <div className="claim-root pointer-events-none fixed inset-0 z-20 overflow-hidden">
       <div aria-hidden className="claim-scrim absolute inset-0" />
 
       <div className="absolute inset-x-0 top-[4.5rem] flex justify-center px-4">
