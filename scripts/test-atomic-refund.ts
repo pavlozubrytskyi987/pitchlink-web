@@ -4,7 +4,7 @@
 //      ANCHOR_WALLET (never touches the production demo auction).
 //   2. Creator opens a 10-minute auction on the throwaway PDA.
 //   3. A bids 0.05 SOL.
-//   4. B bids 0.06 SOL — the single transaction under test.
+//   4. B bids 0.06 SOL, the single transaction under test.
 //   5. Reads that tx's pre/post balances: A must gain exactly +0.05 SOL,
 //      B must lose 0.06 (+fee), treasury must net +0.01 SOL.
 //
@@ -112,7 +112,7 @@ async function main() {
   const sigA = await placeBid(conn, new Wallet(bidderA), creator.publicKey, BID_A);
   console.log(`\nA bid 0.05 SOL: ${sigA}`);
 
-  // 4. Bidder B bids 0.06 SOL — the atomic-refund transaction under test.
+  // 4. Bidder B bids 0.06 SOL, the atomic-refund transaction under test.
   const sigB = await placeBid(conn, new Wallet(bidderB), creator.publicKey, BID_B);
   console.log(`B bid 0.06 SOL: ${sigB}`);
 

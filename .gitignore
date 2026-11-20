@@ -7,10 +7,12 @@ out/
 build/
 *.log
 .DS_Store
-
-# Jayanth clip/poster: local only until he gives permission
-public/creators/jayanth/
 tsconfig.tsbuildinfo
 .pitchlink/
-walkthrough/
 .vercel/
+.cursor/
+*.pem
+id.json
+*-keypair.json
+walkthrough/
+public/creators/jayanth/

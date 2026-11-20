@@ -2,222 +2,178 @@
 
 **Your audience is worth more than your follower count.**
 
-Pitchlink is a sponsorship marketplace where crypto creators auction ad
-placements in their videos. Brands bid SOL, creators get paid through
-on-chain settlement, and auction activity is publicly inspectable on the
-Solana blockchain.
+Pitchlink is a Solana sponsorship marketplace. Creators auction a video placement. Advertisers bid SOL. The program escrows funds, refunds losers in the same transaction, and pays the creator on settlement. The winner then publishes a tracked link whose redirects are counted on-chain.
 
-## Problem and solution
+Live app: [pitchlink-web.vercel.app](https://pitchlink-web.vercel.app)
 
-Small creators with specialized audiences — Solana traders, DeFi
-analysts, protocol communities — often produce the most valuable
-attention in crypto, but sponsorship deals are sized by follower count.
-Their audiences are worth more than the market pays for them.
+## The problem
 
-Pitchlink lets the market price the audience directly:
+Sponsorships are priced by follower count. Small creators with specialized audiences (traders, gamers, protocol communities) often convert better than larger accounts, but they cannot prove it and cannot run an open market for the slot.
 
-1. A creator lists a video sponsorship opportunity (an "ad slot").
-2. Advertisers bid SOL against each other in an open, on-chain auction.
-3. The winning bid settles to the creator through the program.
-4. The winner receives the sponsorship placement plus a tracked link
-   whose redirect events are recorded on-chain.
+Off-chain deals hide the price, the escrow, and the refunds. Pitchlink puts those on Solana so anyone can inspect them.
 
-Every bid, refund, settlement, and redirect-counter update is a real,
-confirmed devnet transaction that anyone can inspect on Solana Explorer.
+## How Pitchlink works
 
-## Technical architecture
+1. A creator lists a sponsorship (one auction PDA per creator wallet).
+2. Advertisers bid SOL from Phantom.
+3. The bid sits in a program-controlled treasury PDA. No platform wallet holds it.
+4. A higher bid refunds the previous bidder in the **same** `place_bid` transaction.
+5. After `end_ts`, anyone can call `settle_auction`. Escrow pays the creator.
+6. The winning wallet signs a challenge and sets brand name, destination URL, and optional logo.
+7. Visitors open `/go/[id]`, get a 302 to that destination, and a server relayer submits `increment_click`. The UI only shows the **confirmed** ClickCounter PDA count.
 
-- **On-chain program** — an Anchor program on Solana devnet. It owns
-  the auction state, the escrow, the refund logic, and the click
-  counters. Program ID:
-  [`EvJeVAfsJQ5tKR2RH4to2jgePPftg175H2re4Tw9V9AD`](https://explorer.solana.com/address/EvJeVAfsJQ5tKR2RH4to2jgePPftg175H2re4Tw9V9AD?cluster=devnet)
-- **Frontend** — Next.js (App Router) with `@solana/wallet-adapter`
-  (Phantom, Solflare). All auction reads and writes go straight from the
-  browser wallet to the program; there is no custodial backend.
-- **Tracked-link + campaign service** — a thin Next.js API layer so
-  that ad viewers never need a wallet:
-  - `src/lib/relayer.ts` loads a funded devnet keypair from
-    `RELAYER_SECRET_KEY` (Vercel) or `RELAYER_KEYPAIR` (local file) and
-    signs `init_click_counter` / `increment_click`. Never
-    `NEXT_PUBLIC_*`.
-  - Winner campaign setup (`POST /api/campaigns`) requires a
-    Phantom-signed, single-use nonce challenge **and** an on-chain
-    check that the wallet is the settled auction's highest bidder.
-    Brand name / destination / logo are advertiser-provided metadata,
-    not on-chain-verified identity.
-  - Persistence: Vercel Blob in production (`BLOB_READ_WRITE_TOKEN`),
-    local `.pitchlink/store.json` in dev. Counts are **never** stored
-    off-chain — the ClickCounter PDA is the only source of truth.
-  - `GET /go/[linkId]` 302s immediately and submits `increment_click`
-    via Next.js `after()`. Rate-limited per IP.
-  - Public judge demo: `/try` ("Try live tracking") — no wallet needed.
-- **Key accounts** — one auction PDA per creator (seeded by creator
-  wallet), a program-controlled escrow (treasury) PDA that holds bid
-  lamports, and one `ClickCounter` PDA per tracked link.
+Auction payment is on-chain. Publishing the sponsored video is still off-chain, and the UI says so.
 
-## Solana integration — transaction lifecycle
+## Why Solana
 
-1. **Bid** — an advertiser's wallet signs `place_bid`; lamports move
-   into the program-controlled escrow PDA.
-2. **Escrow** — the escrow PDA has no private key; only the program can
-   move the funds, per its own rules.
-3. **Atomic refund** — when a higher bid lands, the same transaction
-   refunds the previous highest bidder in full. There is no separate
-   claim step and no moment where two parties are owed money.
-4. **Settlement** — after the auction ends, `settle_auction` pays the
-   creator from escrow according to program rules. An auction that ends
-   with no bids has no winner and no settlement — the UI reflects that.
-5. **Redirect counter** — each click on a tracked link produces an
-   `increment_click` transaction that updates the link's `ClickCounter`
-   PDA and emits a `clickRecorded` event the UI subscribes to.
+- Program-controlled escrow: the treasury PDA has no private key.
+- Atomic refunds: outbid funds return in the same transaction as the new bid.
+- Permissionless settlement: anyone can crank `settle_auction` after expiry.
+- Public records: bids, payouts, and redirect counts are Explorer-inspectable.
 
-### Scope of claims
+This repo is **devnet**. SOL here has no real value.
 
-- **V1 (live):** programmable escrow and on-chain auction records;
-  redirect events recorded on-chain.
-- **V2 (planned, not implemented):** composable conversion verification
-  using trusted advertiser program state (e.g., a counter-program CPI).
-- **Long-term:** portable creator performance history.
+## Architecture
 
-On-chain payment settles at auction close; the video placement itself is
-fulfilled off-chain by the creator, and the UI says so explicitly.
+```
+Browser (Next.js + Phantom)
+    |  place_bid / settle_auction
+    v
+Anchor program  EvJeVAfsJQ5tKR2RH4to2jgePPftg175H2re4Tw9V9AD
+    |-- Auction PDA     seeds = ["auction", creator]
+    |-- Treasury PDA    seeds = ["treasury", auction]
+    |-- ClickCounter    seeds = ["clicks", link_id]
 
-## Setup
+Winner (signed campaign setup)
+    -> Vercel Blob store (name, destination, logo)   // off-chain config
+    -> POST mints /go/[id] and init_click_counter
+
+Visitor hits /go/[id]
+    -> 302 to advertiser URL
+    -> after() relayer: increment_click
+```
+
+Campaign name/logo/URL are advertiser-provided metadata, not on-chain identity. Counts never live in Blob; they live on the ClickCounter PDA.
+
+On-chain source: [pitchlink-onchain](https://github.com/pavlozubrytskyi987/pitchlink-onchain)
+
+## Tech stack
+
+Rust, Anchor, Solana devnet, TypeScript, Next.js 15, React 19, Phantom (wallet-adapter), QuickNode, Vercel, Vercel Blob.
+
+## Live demo
+
+| | |
+|---|---|
+| App | https://pitchlink-web.vercel.app |
+| Try live tracking (no wallet) | https://pitchlink-web.vercel.app/try |
+| Auction | https://pitchlink-web.vercel.app/auction |
+| Creator | https://pitchlink-web.vercel.app/creator/chef-dima |
+| Tracked link | https://pitchlink-web.vercel.app/go/EEy75Zax → https://sabg.fun/?ref=EEy75Zax |
+| Program | https://explorer.solana.com/address/EvJeVAfsJQ5tKR2RH4to2jgePPftg175H2re4Tw9V9AD?cluster=devnet |
+| ClickCounter PDA | https://explorer.solana.com/address/9td96XuhcpwnNKEhFXe1TRDtcpFzcLdjYadybR5ecFsA?cluster=devnet |
+
+Verified round-3 demo transactions (devnet):
+
+| Step | Tx |
+|---|---|
+| Init | [`3QA9ZR7t…`](https://explorer.solana.com/tx/3QA9ZR7t9WuwjcmAjFxsGR6vK9CwVZ33FqVmVoyk36wvhsa8RBwdCCRovKYPxnGxoUjaWBzhfaUjXhqYFit9p954?cluster=devnet) |
+| Bid 0.05 | [`u2pYrwXh…`](https://explorer.solana.com/tx/u2pYrwXhMfHkRhw9R2WWYNPYoo2vHcCjcKib3Bnpcud2YYncbDEk958PFYHPuWWio3w43YvwEL4XM4ot12EwMSm?cluster=devnet) |
+| Bid 0.06 + atomic refund | [`3qC485tw…`](https://explorer.solana.com/tx/3qC485twCtWqqZUodeikbbQ7FvV3zuBWAk8bdqb2BK3aqabaoNrUciisDE36S7kmRs57iu6Kv79dwCiZmmXaqSn9?cluster=devnet) |
+| Settle (0.06 to creator) | [`4FUvnxGX…`](https://explorer.solana.com/tx/4FUvnxGX7rJv2ocrBhfNZkS6NRmirWKd8kaHEiBX21ebJAKbDmrGV4Sv9LrG3Z6aSLjkDXoh1tGrahLGXvU8fr3k?cluster=devnet) |
+
+The bid-0.06 tx moves −0.06008 from the new bidder, +0.05 back to the previous bidder, +0.01 into escrow, in one transaction.
+
+## Local setup
 
 ```bash
 npm install
 cp .env.example .env.local
 
-# Generate + fund a devnet relayer (server-only):
+# Fund a relayer (devnet only)
 solana-keygen new -o ~/.config/solana/pitchlink-relayer.json
 solana airdrop 1 $(solana address -k ~/.config/solana/pitchlink-relayer.json) --url devnet
-echo "RELAYER_KEYPAIR=$HOME/.config/solana/pitchlink-relayer.json" >> .env
+
+# .env.local (never commit)
+# RELAYER_KEYPAIR=$HOME/.config/solana/pitchlink-relayer.json
+# SOLANA_RPC_URL=https://api.devnet.solana.com
+# NEXT_PUBLIC_QUICKNODE_DEVNET_URL=   # optional dedicated RPC
 
 npm run dev
 ```
 
-Open http://localhost:3000. Connect a devnet wallet with devnet SOL to
-place a bid on the live auction.
+Open http://localhost:3000. Connect a **devnet** Phantom wallet to bid.
 
-Environment variables — see `.env.example` for the full list:
-
-- `NEXT_PUBLIC_PROGRAM_ID` — defaults to the deployed devnet program.
-- `NEXT_PUBLIC_QUICKNODE_DEVNET_URL` / `SOLANA_RPC_URL` — dedicated
-  RPC. Prefer `SOLANA_RPC_URL` for server-only (never browser-bundled).
-- `RELAYER_SECRET_KEY` — server-only base58/JSON secret (Vercel).
-  Locally you may use `RELAYER_KEYPAIR` instead (file path).
-- `BLOB_READ_WRITE_TOKEN` — required on Vercel for shared link/campaign
-  persistence across serverless invocations.
-- `LINKS_SEED_JSON` / `CAMPAIGNS_SEED_JSON` — optional seed so a fresh
-  deploy ships a legitimately-claimed demo campaign.
-
-## Deploy (Vercel)
-
-```bash
-npm i -g vercel
-vercel link
-# Create a Blob store in the Vercel dashboard, then:
-vercel env add BLOB_READ_WRITE_TOKEN
-vercel env add RELAYER_SECRET_KEY
-vercel env add SOLANA_RPC_URL
-vercel env add NEXT_PUBLIC_QUICKNODE_DEVNET_URL
-# Optional: seed the claimed SABG demo campaign (LINKS_SEED_JSON /
-# CAMPAIGNS_SEED_JSON). Do not invent campaigns that were never claimed.
-vercel --prod
-```
-
-Do **not** put private keys in git or in `NEXT_PUBLIC_*` variables.
-DNS for pitchlink.xyz is intentionally left alone until the deploy is
-verified.
-
-## Live deployment (hackathon)
-
-- **App:** https://pitchlink-web.vercel.app
-- **Try live tracking:** https://pitchlink-web.vercel.app/try
-- **Creator profile:** https://pitchlink-web.vercel.app/creator/chef-dima
-- **Demo tracked link:** https://pitchlink-web.vercel.app/go/EEy75Zax
-  → 302 to `https://sabg.fun/?ref=EEy75Zax`
-- **ClickCounter PDA:**
-  [`9td96XuhcpwnNKEhFXe1TRDtcpFzcLdjYadybR5ecFsA`](https://explorer.solana.com/address/9td96XuhcpwnNKEhFXe1TRDtcpFzcLdjYadybR5ecFsA?cluster=devnet)
-
-Auction payments are enforced by the deployed program; sponsored-video
-delivery remains off-chain. Redirect counts are recorded redirects, not
-verified customers. The program is upgradeable (authority retained).
+See `.env.example` for Vercel (`RELAYER_SECRET_KEY`, `BLOB_READ_WRITE_TOKEN`). Do not put secrets in `NEXT_PUBLIC_*`.
 
 ## Testing
 
-Everything below runs against devnet and produces inspectable
-transactions.
+No unit-test runner is wired. Repro against **devnet**:
 
 ```bash
-# Typecheck
-npx tsc --noEmit
+npm run typecheck
+npm run build
 
-# Inspect the current auction state for the demo creator
+# Read current auction for a creator wallet
 npx tsx scripts/check-auction.ts <creator-pubkey>
 
-# Initialize a fresh auction (demo creator keypair, duration in minutes)
-ANCHOR_WALLET=~/.config/solana/pitchlink-demo2.json \
-  DURATION_MINUTES=30 npx tsx scripts/init-auction.ts
+# Confirm an atomic-refund tx's balance rows
+npx tsx scripts/demo-refund-check.ts <signature>
 
-# Place a bid from a second (foreign) wallet and verify escrow movement
-npx tsx scripts/bid-and-verify.ts
-
-# Settle or cancel after end time
-ANCHOR_WALLET=... npx tsx scripts/settle-auction.ts
-ANCHOR_WALLET=... npx tsx scripts/cancel-auction.ts
+# Read a ClickCounter
+npx tsx scripts/demo-counter.ts EEy75Zax
 ```
 
-Tracked links end-to-end:
+Scripts that **write** on-chain state (only run if you intend to):
 
 ```bash
-# Mint a tracked link for the demo creator:
-curl -X POST http://localhost:3000/api/links \
-  -H 'content-type: application/json' \
-  -d '{"destination":"https://example.com","creator":"<creator-pubkey>"}'
-# -> { id: "abc12345", shortUrl: "/go/abc12345", ... }
+# New auction (fails if that creator PDA already exists)
+ANCHOR_WALLET=~/.config/solana/<creator>.json DURATION_MINUTES=5 npx tsx scripts/init-auction.ts
 
-# Click it a few times:
-for i in 1 2 3; do curl -s http://localhost:3000/go/abc12345 >/dev/null; done
-
-# Read the real count from chain:
-curl -s http://localhost:3000/api/links/abc12345
-npx tsx scripts/check-clicks.ts
+npx tsx scripts/demo-bid.ts <creator-pubkey>
+npx tsx scripts/settle-auction.ts
 ```
 
-Each click is a real devnet transaction. The auction tile and
-`/creator/<slug>` pages subscribe to the on-chain `clickRecorded` event
-and update live — no polling.
+`place_bid` refunds are verified by reading Explorer/RPC balance diffs, not by mocks.
 
-## Current limitations
+## Limitations and roadmap
 
-- **Devnet only.** The program is deployed to devnet; SOL has no real
-  value.
-- **Upgradeable program.** The deployed program enforces the auction,
-  escrow, refund, and settlement rules described here, but it is a
-  loader-v3 upgradeable program and an upgrade authority is retained for
-  the hackathon. It is not immutable — do not claim otherwise.
-- **Redirect events, not verified conversions.** The counter records
-  that a redirect happened. It does not prove a purchase or signup —
-  that is the V2 roadmap item, and it is not implemented.
-- **Off-chain fulfillment.** The program settles payment; it does not
-  enforce that the creator publishes the video or honors the placement.
-- **Relayer centralization.** Click transactions are signed by a
-  server-side relayer so viewers don't need wallets. Anyone could spam
-  increments; a production design would rate-limit or verify redirects.
-- **One auction per creator.** The program derives one auction PDA per
-  creator wallet, so a creator runs one auction at a time.
-- **No auction-close instruction reuse.** After settlement a creator
-  must rotate wallets to run a new auction (demo flow only).
+**Built**
 
-## V2 roadmap
+- Timed English auction, SOL bids, program escrow, atomic outbid refunds
+- Permissionless settlement to the creator
+- Winner-only campaign setup (signed nonce + on-chain highest-bidder check)
+- Tracked `/go` redirects and ClickCounter PDAs
 
-1. **Composable conversion verification** — advertisers deploy (or
-   reference) a small counter program that records real conversions
-   (purchase, signup); the Pitchlink program CPIs into it, so creators
-   prove customer actions rather than redirect counts.
-2. **Portable creator performance history** — a creator's verified
-   conversion record becomes an on-chain asset any sponsor can read
-   before bidding.
-3. **Mainnet deployment**, multiple concurrent slots per creator, and
-   auction-close/re-init flows.
+**Not built (do not claim)**
+
+- Conversion SDK, unique customers, deposits, swaps, retention, revenue
+- Portable creator performance history
+- Mainnet, multiple concurrent auctions per creator, auction reuse after settle
+
+**Honest constraints**
+
+- Devnet only
+- Program is **upgradeable**; an upgrade authority is retained
+- Redirect count ≠ verified customer
+- Video fulfillment is off-chain
+- Click txs are signed by a server relayer (rate-limited, still central)
+- One auction PDA per creator; after settle, a new demo needs a new creator wallet
+
+## Repository layout
+
+```
+src/app/            pages and API routes
+src/components/     UI
+src/lib/            Solana client, relayer, store, URL checks
+src/idl/            deployed program IDL
+src/data/           creator/brand display maps (not on-chain truth)
+scripts/            devnet read/write helpers
+```
+
+## Author
+
+Solo hackathon project for UBC 2026.
+
+- App: https://github.com/pavlozubrytskyi987/pitchlink-web
+- Program: https://github.com/pavlozubrytskyi987/pitchlink-onchain

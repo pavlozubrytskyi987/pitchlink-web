@@ -4,7 +4,7 @@
 // must not already have an auction account.
 //
 // Duration: set DURATION_MINUTES env to override; default 5 minutes for the
-// live demo. The on-chain program has no min-bid field — the 0.05 SOL floor
+// live demo. The on-chain program has no min-bid field; the 0.05 SOL floor
 // lives in the frontend input.
 
 import fs from "node:fs";
