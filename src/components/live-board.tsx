@@ -248,6 +248,7 @@ export function LiveBoard({ creators = CREATORS, live }: Props) {
         </section>
 
         <HowItWorks />
+        <ScopeSection />
 
         <div
           id="up-for-auction"
@@ -349,6 +350,67 @@ const STEPS = [
     body: "Every tracked-link visit submits a Solana transaction that updates a public counter.",
   },
 ];
+
+const SCOPE_LIVE = [
+  "Creator auctions",
+  "SOL bidding",
+  "Program-controlled escrow",
+  "Atomic outbid refunds",
+  "Settlement",
+  "Tracked-link counter updates",
+];
+
+const SCOPE_PLANNED = [
+  "Advertiser conversion integrations",
+  "Qualifying on-chain action verification",
+  "Creator performance history",
+  "Better attribution and anti-abuse controls",
+];
+
+function ScopeSection() {
+  return (
+    <section
+      aria-label="What is live versus planned"
+      className="mt-16 grid gap-10 sm:mt-20 sm:grid-cols-2 sm:gap-12"
+    >
+      <div>
+        <h3 className="text-[15px] font-semibold tracking-[-0.01em]">
+          Live on devnet
+        </h3>
+        <ul className="mt-4 divide-y divide-hairline border-y border-hairline">
+          {SCOPE_LIVE.map((item) => (
+            <li
+              key={item}
+              className="flex items-center gap-2.5 py-2.5 text-[14px] text-graphite"
+            >
+              <span className="size-[5px] shrink-0 rounded-full bg-accent" aria-hidden />
+              {item}
+            </li>
+          ))}
+        </ul>
+      </div>
+      <div>
+        <h3 className="text-[15px] font-semibold tracking-[-0.01em] text-ash">
+          Planned
+        </h3>
+        <ul className="mt-4 divide-y divide-hairline border-y border-hairline">
+          {SCOPE_PLANNED.map((item) => (
+            <li
+              key={item}
+              className="flex items-center gap-2.5 py-2.5 text-[14px] text-ash"
+            >
+              <span
+                className="size-[5px] shrink-0 rounded-full border border-hairline-strong"
+                aria-hidden
+              />
+              {item}
+            </li>
+          ))}
+        </ul>
+      </div>
+    </section>
+  );
+}
 
 function HowItWorks() {
   return (
