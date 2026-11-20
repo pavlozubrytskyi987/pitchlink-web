@@ -11,14 +11,14 @@ import {
   useSyncExternalStore,
 } from "react";
 import { CreatorTile, type TileLive } from "@/components/creator-tile";
-import { CREATORS, type Creator } from "@/data/creators";
+import { CREATORS, TRACKED_COUNTER_CREATORS, type Creator } from "@/data/creators";
 import { ProofList } from "@/components/chain-status";
 import { SiteHeader } from "@/components/site-header";
 import { SponsorshipCard } from "@/components/sponsorship-card";
 import { VerifiedOnSolana } from "@/components/verified-on-solana";
 import { subscribeFeed, type BidEntry } from "@/lib/bid-feed";
 import { PROGRAM_ID } from "@/lib/config";
-import { useAllClicks } from "@/lib/use-all-clicks";
+import { clicksForWallets, useAllClicks } from "@/lib/use-all-clicks";
 import { useHeroAuction } from "@/lib/use-hero-auction";
 import { observeInView, observeNear } from "@/lib/visibility";
 
@@ -293,11 +293,12 @@ export function LiveBoard({ creators = CREATORS, live }: Props) {
             <SponsorshipCard
               creator={hero}
               chain={heroChain}
-              clicks={
-                heroChain?.creator && heroChain.creator in clicksByCreator
-                  ? clicksByCreator[heroChain.creator]
-                  : null
-              }
+              clicks={clicksForWallets(clicksByCreator, [
+                heroChain?.creator,
+                hero.auctionCreatorPubkey,
+                hero.creatorPubkey,
+                ...TRACKED_COUNTER_CREATORS,
+              ])}
               bidSignature={latestReal[hero.slug]?.signature ?? null}
             />
           </div>
@@ -308,9 +309,11 @@ export function LiveBoard({ creators = CREATORS, live }: Props) {
         >
           {sorted.map((creator) => {
             const real = latestReal[creator.slug];
-            const pubkey = creator.creatorPubkey ?? creator.auctionCreatorPubkey;
-            const onchainClicks =
-              pubkey && pubkey in clicksByCreator ? clicksByCreator[pubkey] : null;
+            const onchainClicks = clicksForWallets(clicksByCreator, [
+              creator.creatorPubkey,
+              creator.auctionCreatorPubkey,
+              ...(creator.status === "live" ? TRACKED_COUNTER_CREATORS : []),
+            ]);
             const needsMerge =
               real || liveAll?.[creator.slug] || onchainClicks !== null;
             const merged: Partial<TileLive> | undefined = needsMerge

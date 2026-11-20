@@ -9,6 +9,25 @@ import { useEffect, useRef, useState } from "react";
 
 export type ClicksByCreator = Record<string, number>;
 
+/** Sum confirmed counts for the wallets that belong to one listing.
+ *  Demo auctions rotate creator keypairs (one PDA per creator, init-only),
+ *  so the homepage must include those wallets or the card shows a dash. */
+export function clicksForWallets(
+  byCreator: ClicksByCreator,
+  wallets: Array<string | null | undefined>,
+): number | null {
+  let total = 0;
+  let hit = false;
+  for (const key of wallets) {
+    if (!key) continue;
+    if (key in byCreator) {
+      hit = true;
+      total += byCreator[key];
+    }
+  }
+  return hit ? total : null;
+}
+
 type LinksRow = { id: string; creator: string; clicks: number };
 
 export function useAllClicks(): ClicksByCreator {
