@@ -34,11 +34,21 @@ export async function GET(
           return;
         }
       }
-      const sig = await incrementClick(conn, relayer, linkId);
+      const sig = await incrementClick(conn, relayer, linkId).catch(
+        async (firstError: unknown) => {
+          // One retry with ~1s backoff covers transient RPC 429s. Still
+          // best-effort: a double failure is logged, never fabricated —
+          // the UI only ever reads the confirmed on-chain count.
+          console.warn(`[pitchlink] incrementClick ${linkId} failed, retrying once`, firstError);
+          await new Promise((resolve) => setTimeout(resolve, 1000));
+          return incrementClick(conn, relayer, linkId);
+        },
+      );
       console.log(`[pitchlink] click ${linkId} -> ${sig}`);
     } catch (error) {
-      // Visitor is already gone. Log for debugging; don't retry here.
-      console.error(`[pitchlink] incrementClick ${linkId} failed`, error);
+      // Visitor is already gone. Log for debugging; the counter simply
+      // undercounts transient failures rather than inventing events.
+      console.error(`[pitchlink] incrementClick ${linkId} failed after retry`, error);
     }
   };
   try {

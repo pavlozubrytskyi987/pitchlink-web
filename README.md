@@ -146,6 +146,10 @@ and update live — no polling.
 
 - **Devnet only.** The program is deployed to devnet; SOL has no real
   value.
+- **Upgradeable program.** The deployed program enforces the auction,
+  escrow, refund, and settlement rules described here, but it is a
+  loader-v3 upgradeable program and an upgrade authority is retained for
+  the hackathon. It is not immutable — do not claim otherwise.
 - **Redirect events, not verified conversions.** The counter records
   that a redirect happened. It does not prove a purchase or signup —
   that is the V2 roadmap item, and it is not implemented.
