@@ -6,7 +6,6 @@ import { useCallback, useEffect, useState } from "react";
 import { CheckIcon, ExternalIcon } from "@/components/icons";
 import { useLogoDraft } from "@/components/logo-draft";
 import { pushRealBid } from "@/lib/bid-feed";
-import { loadBidLogo, saveBidLogo } from "@/lib/bid-logos";
 import { brandFor } from "@/data/brands";
 import { CREATORS, HERO_CREATOR_PUBKEY, MIN_BID_SOL } from "@/data/creators";
 import { explorerAddress, explorerTx } from "@/lib/explorer";
@@ -16,6 +15,7 @@ import {
   initializeAuction,
   placeBid,
   settleAuction,
+  treasuryPda,
   watchAuctionAccount,
   type AuctionAccount,
   type BidRecord,
@@ -23,10 +23,15 @@ import {
 
 const LAMPORTS = BigInt("1000000000");
 
+/**
+ * Right column of /auction. A financial instrument panel: bid, escrow,
+ * settlement — every action backed by the on-chain program, every state
+ * labeled so no impossible action is offered.
+ */
 export function AuctionPanel() {
   const { connection } = useConnection();
   const wallet = useAnchorWallet();
-  const { draft, setWinner, setSettled, setClaim } = useLogoDraft();
+  const { setSettled, setClaim } = useLogoDraft();
   const [auction, setAuction] = useState<AuctionAccount | null>(null);
   const [bids, setBids] = useState<BidRecord[]>([]);
   const [loading, setLoading] = useState(true);
@@ -76,32 +81,36 @@ export function AuctionPanel() {
     });
   }, [auctionKey, connection, refresh]);
 
+  const hasBids = Boolean(auction && auction.highestBid > BigInt(0));
   const remaining = auction && now !== null ? auction.endTs - now : null;
-  const ended = Boolean(
-    auction && (auction.settled || (remaining !== null && remaining <= 0)),
-  );
+  const timeUp = remaining !== null && remaining <= 0;
   const isCreator = Boolean(
     wallet && auction && wallet.publicKey.equals(auction.creator),
   );
-  const winnerKey =
-    auction && auction.highestBid > BigInt(0)
-      ? auction.highestBidder.toBase58()
-      : null;
+  const winnerKey = hasBids ? auction!.highestBidder.toBase58() : null;
+
+  // Panel state machine. Never offer an action the program would reject:
+  //   open    — auction exists, time remains         -> bidding UI
+  //   no bids + time up                              -> "Ended — No winning bidder"
+  //   bids + time up, unsettled                      -> settle CTA (permissionless)
+  //   settled                                        -> receipt
+  const status: "open" | "ended-no-bids" | "awaiting-settle" | "settled" | null =
+    !auction
+      ? null
+      : auction.settled
+        ? "settled"
+        : timeUp
+          ? hasBids
+            ? "awaiting-settle"
+            : "ended-no-bids"
+          : "open";
+  const urgent = remaining !== null && remaining > 0 && remaining < 3600;
 
   useEffect(() => {
     setSettled(Boolean(auction?.settled));
-    if (!auction || !winnerKey) {
-      setWinner(null);
-      return;
-    }
-    const mine = wallet?.publicKey.equals(auction.highestBidder) ?? false;
-    if (mine && draft)
-      saveBidLogo(auction.publicKey.toBase58(), winnerKey, draft);
-    const stored = loadBidLogo(auction.publicKey.toBase58(), winnerKey);
-    setWinner(auction.settled ? (stored ?? (mine ? draft : null)) : null);
-  }, [auction, draft, setSettled, setWinner, wallet, winnerKey]);
+  }, [auction, setSettled]);
 
-  // Hand the settled result to the SLOT CLAIMED reveal on the stage.
+  // Hand the settled result to the claim reveal (tracked-link handoff).
   useEffect(() => {
     if (!auction || !auction.settled || !winnerKey) {
       setClaim(null);
@@ -145,11 +154,6 @@ export function AuctionPanel() {
     setNotice(null);
     setLastTx(null);
     try {
-      if (!draft) {
-        setNotice("Upload a logo on the shirt first. It stays if you win.");
-        setBusy(null);
-        return;
-      }
       const parsed = Number(amount);
       if (!Number.isFinite(parsed) || parsed < MIN_BID_SOL) {
         setNotice(`Minimum bid is ${MIN_BID_SOL} SOL.`);
@@ -157,16 +161,20 @@ export function AuctionPanel() {
         return;
       }
       const lamports = solToLamports(amount);
+      if (lamports <= auction.highestBid) {
+        setNotice(
+          `Bid must exceed the current highest bid of ${formatSol(auction.highestBid)} SOL.`,
+        );
+        setBusy(null);
+        return;
+      }
+      // Confirmed on-chain before we show success: placeBid resolves after
+      // the program has escrowed the lamports.
       const signature = await placeBid(
         connection,
         wallet,
         auction.creator,
         lamports,
-      );
-      saveBidLogo(
-        auction.publicKey.toBase58(),
-        wallet.publicKey.toBase58(),
-        draft,
       );
       const creatorKey = auction.creator.toBase58();
       const matched =
@@ -216,14 +224,11 @@ export function AuctionPanel() {
     }
   }
 
-  const status = !auction
-    ? null
-    : auction.settled
-      ? "settled"
-      : ended
-        ? "ended"
-        : "live";
-  const urgent = remaining !== null && remaining > 0 && remaining < 3600;
+  const treasury = auction ? treasuryPda(auction.publicKey) : null;
+  const minNextBid =
+    auction && hasBids
+      ? auction.highestBid + BigInt(1)
+      : BigInt(Math.round(MIN_BID_SOL * 1e9));
 
   return (
     <aside className="flex h-full min-h-[480px] flex-col rounded-[14px] border border-hairline bg-paper p-5 sm:min-h-[560px]">
@@ -260,11 +265,13 @@ export function AuctionPanel() {
           <div className="mt-6 border-t border-ink pt-3">
             <div className="flex items-baseline justify-between gap-2">
               <p className={LABEL}>Highest bid</p>
-              <p className={LABEL}>{auction.settled ? "Status" : "Ends in"}</p>
+              <p className={LABEL}>
+                {status === "settled" ? "Status" : status === "open" ? "Ends in" : "Status"}
+              </p>
             </div>
             <div className="mt-1.5 flex items-baseline justify-between gap-3">
               <p className="text-[36px] font-semibold leading-none tracking-[-0.03em]">
-                {auction.highestBid > BigInt(0) ? (
+                {hasBids ? (
                   <>
                     {formatSol(auction.highestBid)}{" "}
                     <span className="font-sans text-[14px] tracking-normal text-graphite">SOL</span>
@@ -274,13 +281,21 @@ export function AuctionPanel() {
                 )}
               </p>
               <p
-                className={`text-[16px] tabular-nums ${urgent ? "text-alert" : auction.settled ? "text-accent" : "text-ink"}`}
+                className={`text-[16px] tabular-nums ${
+                  status === "open"
+                    ? urgent
+                      ? "text-alert"
+                      : "text-ink"
+                    : "text-accent"
+                }`}
               >
-                {auction.settled
-                  ? "Settled"
-                  : remaining === null
+                {status === "open"
+                  ? remaining === null
                     ? "…"
-                    : formatRemaining(remaining)}
+                    : formatRemaining(remaining)
+                  : status === "settled"
+                    ? "Settled"
+                    : "Ended"}
               </p>
             </div>
             <dl className="mt-4 divide-y divide-hairline border-y border-hairline text-[13px]">
@@ -292,10 +307,27 @@ export function AuctionPanel() {
               <Row label="Pays out to">
                 <AddressLink address={auction.creator.toBase58()} />
               </Row>
+              {treasury ? (
+                <Row label="Escrow">
+                  <AddressLink address={treasury.toBase58()} />
+                </Row>
+              ) : null}
             </dl>
           </div>
 
-          {ended && !auction.settled ? (
+          {status === "ended-no-bids" ? (
+            <div className="mt-4 rounded-[12px] border border-hairline bg-wash p-4">
+              <p className="text-[14px] font-medium text-ink">
+                Ended — No winning bidder
+              </p>
+              <p className="mt-1 text-[12.5px] leading-snug text-ash">
+                No bids were placed before the deadline, so there is nothing
+                to settle.
+              </p>
+            </div>
+          ) : null}
+
+          {status === "awaiting-settle" ? (
             <div className="mt-4">
               <button
                 type="button"
@@ -303,83 +335,93 @@ export function AuctionPanel() {
                 disabled={!wallet || busy !== null}
                 className="h-12 w-full rounded-full bg-ink text-[14px] font-medium text-paper transition-colors hover:bg-[#262626] disabled:bg-hairline disabled:text-ash"
               >
-                {busy === "settle" ? "Settling…" : "Settle & claim the slot"}
+                {busy === "settle" ? "Settling…" : "Settle auction"}
               </button>
               <p className="mt-2 text-[12px] leading-snug text-ash">
-                Phantom pops up. Click Confirm.
-                {auction.highestBid > BigInt(0)
-                  ? ` ${formatSol(auction.highestBid)} SOL goes to ${shortKey(auction.creator.toBase58())}.`
-                  : " This closes the auction."}
+                Settlement is permissionless: the program pays{" "}
+                {formatSol(auction.highestBid)} SOL from escrow to{" "}
+                {shortKey(auction.creator.toBase58())}.
+                {!wallet ? " Connect a wallet to settle." : ""}
               </p>
-              {!wallet ? (
-                <p className="mt-1 text-[12px] text-ash">
-                  Connect a wallet to settle.
-                </p>
-              ) : null}
             </div>
           ) : null}
 
-          <form
-            className="mt-4"
-            onSubmit={(event) => {
-              event.preventDefault();
-              void submitBid();
-            }}
-          >
-            <label htmlFor="bid-amount" className={LABEL}>
-              Your bid
-            </label>
-            <div className="mt-1.5 flex gap-2">
-              <div className="relative min-w-0 flex-1">
-                <input
-                  id="bid-amount"
-                  value={amount}
-                  onChange={(event) => setAmount(event.target.value)}
-                  inputMode="decimal"
-                  min={MIN_BID_SOL}
-                  step="0.01"
-                  placeholder={`${MIN_BID_SOL.toFixed(2)}`}
-                  aria-label="Bid in SOL"
-                  disabled={ended || !wallet || isCreator}
-                  className="h-12 w-full rounded-[10px] border border-hairline-strong bg-paper pl-3.5 pr-12 text-[16px] text-ink outline-none transition-colors placeholder:text-ash focus:border-ink disabled:bg-wash disabled:opacity-60"
-                />
-                <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[12px] text-ash">
-                  SOL
-                </span>
-              </div>
-              <button
-                type="submit"
-                disabled={
-                  ended ||
-                  !wallet ||
-                  isCreator ||
-                  busy !== null ||
-                  amount.trim() === "" ||
-                  !draft
-                }
-                className="h-12 shrink-0 rounded-full bg-ink px-5 text-[14px] font-medium text-paper transition-colors hover:bg-[#262626] disabled:bg-hairline disabled:text-ash"
+          {status === "settled" ? (
+            <div className="mt-4 rounded-[12px] border border-hairline bg-wash p-4">
+              <p className="flex items-center gap-2 text-[14px] font-medium text-ink">
+                <CheckIcon className="size-3.5 text-accent" />
+                Settlement receipt
+              </p>
+              <p className="mt-1.5 text-[12.5px] leading-snug text-graphite">
+                {formatSol(auction.highestBid)} SOL paid from escrow to the
+                creator. Recorded on the auction account.
+              </p>
+              <a
+                href={explorerAddress(auction.publicKey.toBase58())}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group mt-2 inline-flex items-center gap-1.5 text-[12.5px] text-accent"
               >
-                {busy === "bid" ? "Sending…" : "Place bid"}
-              </button>
+                View on Solana Explorer
+                <ExternalIcon className="size-3" />
+              </a>
             </div>
-          </form>
-          <div className="mt-2 space-y-1 text-[12px] leading-snug text-ash">
-            {!wallet ? <p>Connect a wallet to bid.</p> : null}
-            {isCreator ? (
-              <p>The creator can’t bid on their own auction.</p>
-            ) : null}
-            {wallet && !isCreator && !ended && !draft ? (
-              <p className="text-graphite">
-                Upload a logo on the shirt first. It stays if you win.
-              </p>
-            ) : null}
-            {!ended ? (
-              <p>
-                Bids are escrowed on-chain. If you&rsquo;re outbid, you&rsquo;re
-                refunded in the same transaction.
-              </p>
-            ) : null}
-          </div>
+          ) : null}
+
+          {status === "open" ? (
+            <>
+              <form
+                className="mt-4"
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  void submitBid();
+                }}
+              >
+                <div className="flex items-baseline justify-between gap-2">
+                  <label htmlFor="bid-amount" className={LABEL}>
+                    Your bid
+                  </label>
+                  <p className="text-[12px] tabular-nums text-ash">
+                    Min next bid {formatSol(minNextBid)} SOL
+                  </p>
+                </div>
+                <div className="mt-1.5 flex gap-2">
+                  <div className="relative min-w-0 flex-1">
+                    <input
+                      id="bid-amount"
+                      value={amount}
+                      onChange={(event) => setAmount(event.target.value)}
+                      inputMode="decimal"
+                      placeholder={formatSol(minNextBid)}
+                      aria-label="Bid in SOL"
+                      disabled={!wallet || isCreator}
+                      className="h-12 w-full rounded-[10px] border border-hairline-strong bg-paper pl-3.5 pr-12 text-[16px] text-ink outline-none transition-colors placeholder:text-ash focus:border-ink disabled:bg-wash disabled:opacity-60"
+                    />
+                    <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[12px] text-ash">
+                      SOL
+                    </span>
+                  </div>
+                  <button
+                    type="submit"
+                    disabled={!wallet || isCreator || busy !== null || amount.trim() === ""}
+                    className="h-12 shrink-0 rounded-full bg-ink px-5 text-[14px] font-medium text-paper transition-colors hover:bg-[#262626] disabled:bg-hairline disabled:text-ash"
+                  >
+                    {busy === "bid" ? "Sending…" : "Place bid"}
+                  </button>
+                </div>
+              </form>
+              <div className="mt-2 space-y-1 text-[12px] leading-snug text-ash">
+                {!wallet ? <p>Connect a wallet to bid.</p> : null}
+                {isCreator ? (
+                  <p>The creator can’t bid on their own auction.</p>
+                ) : null}
+                <p>
+                  Bids are escrowed by the program. If you&rsquo;re outbid,
+                  you&rsquo;re refunded in the same transaction.
+                </p>
+              </div>
+            </>
+          ) : null}
 
           <div className="mt-5 min-h-0 flex-1 overflow-y-auto">
             <div className="flex items-baseline justify-between">
@@ -444,8 +486,9 @@ export function AuctionPanel() {
       ) : (
         <div className="mt-5">
           <p className="text-[14px] text-ink">No auction is open.</p>
-          <p className="mt-1 text-[12px] text-ash">
-            Click Open auction. Phantom pops up. Click Confirm.
+          <p className="mt-1 text-[12px] leading-snug text-ash">
+            Open one to list this sponsorship. The connected wallet becomes
+            the creator and receives the settlement.
           </p>
           <label className={`mt-4 block ${LABEL}`}>
             Minutes
@@ -503,13 +546,20 @@ export function AuctionPanel() {
 
 const LABEL = "text-[12.5px] text-graphite";
 
-function StatusPill({ status }: { status: "live" | "ended" | "settled" }) {
-  const label = status === "live" ? "Live" : status === "settled" ? "Settled" : "Ended";
+function StatusPill({ status }: { status: "open" | "ended-no-bids" | "awaiting-settle" | "settled" }) {
+  const label =
+    status === "open"
+      ? "Live"
+      : status === "settled"
+        ? "Settled"
+        : status === "awaiting-settle"
+          ? "Ended"
+          : "Ended";
   return (
     <span
-      className={`inline-flex items-center gap-1.5 text-[13px] ${status === "ended" ? "text-graphite" : "text-accent"}`}
+      className={`inline-flex items-center gap-1.5 text-[13px] ${status === "open" || status === "settled" ? "text-accent" : "text-graphite"}`}
     >
-      {status === "live" ? (
+      {status === "open" ? (
         <span className="live-dot size-[5px] rounded-full bg-accent" />
       ) : null}
       {label}
@@ -539,7 +589,6 @@ function AddressLink({ address }: { address: string }) {
     </a>
   );
 }
-
 
 function formatSol(lamports: bigint): string {
   const negative = lamports < BigInt(0);

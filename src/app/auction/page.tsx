@@ -1,7 +1,8 @@
+import { AuctionClaim } from "@/components/auction-claim";
 import { AuctionPanel } from "@/components/auction-panel";
 import { PastBids } from "@/components/past-bids";
-import { ProductViewer } from "@/components/product-viewer";
 import { SiteHeader } from "@/components/site-header";
+import { SponsorshipDetails } from "@/components/sponsorship-details";
 import { CREATORS } from "@/data/creators";
 
 const HERO = CREATORS.find((c) => c.status === "live");
@@ -9,11 +10,18 @@ const HERO = CREATORS.find((c) => c.status === "live");
 export default function AuctionPage() {
   return (
     <div className="flex min-h-screen flex-col bg-paper text-ink">
-      <SiteHeader crumb={`${HERO?.name ?? "Live"} auction`} />
-      <div className="mx-auto grid w-full max-w-[1320px] min-h-0 gap-4 px-5 pb-5 pt-5 sm:gap-5 sm:px-8 sm:pb-8 md:h-[calc(100vh-4rem)] md:grid-cols-[minmax(0,1fr)_320px] lg:grid-cols-[minmax(0,1fr)_360px]">
-        <ProductViewer />
-        <AuctionPanel />
-      </div>
+      <SiteHeader crumb="Sponsorship auction" />
+      <main className="relative mx-auto w-full max-w-[1200px] px-5 pb-16 pt-8 sm:px-8 sm:pt-12">
+        {HERO ? <AuctionClaim /> : null}
+        <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_400px] lg:gap-12">
+          {HERO ? (
+            <SponsorshipDetails creator={HERO} />
+          ) : (
+            <p className="text-[15px] text-graphite">No sponsorship listed.</p>
+          )}
+          <AuctionPanel />
+        </div>
+      </main>
       <PastBids />
     </div>
   );
