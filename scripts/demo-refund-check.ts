@@ -2,7 +2,9 @@
 import { Connection } from "@solana/web3.js";
 import { rpcEndpoint } from "../src/lib/config";
 
-const SIG = "2f72yJ8p1HdjyTzMMdW97tKzumsLUnKjUa7NbEwEfAqpsPerRbKDNuXkVxNBcM3Rad4pgFpsSuR8QWv7qV65fpTx";
+const SIG =
+  process.argv[2] ??
+  "2f72yJ8p1HdjyTzMMdW97tKzumsLUnKjUa7NbEwEfAqpsPerRbKDNuXkVxNBcM3Rad4pgFpsSuR8QWv7qV65fpTx";
 
 async function main() {
   const conn = new Connection(rpcEndpoint(), "confirmed");
