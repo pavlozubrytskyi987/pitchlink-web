@@ -26,7 +26,33 @@ const LIFECYCLE = [
   },
   {
     title: "Tracked-link visits update a public counter",
-    body: "Each redirect submits a transaction that increments a ClickCounter PDA.",
+    body: "Each redirect submits a transaction; confirmed increments update a public ClickCounter PDA.",
+  },
+];
+
+/**
+ * Real, previously confirmed devnet transactions from this deployed program.
+ * Signatures only — if one were unavailable, the item would be omitted
+ * rather than faked.
+ */
+const PROOFS: { title: string; body: string; signature: string }[] = [
+  {
+    title: "Atomic outbid refund",
+    body: "One transaction escrows a 0.06 SOL bid and refunds the previous 0.05 SOL bid in full.",
+    signature:
+      "3ZNiLSkx3Lfz3TQA3irZcuV7ShqqEsHzGsVhJr52tRjFCXEtW5qUDXQM5tQFC1hMp968Pu1mhNcDnthiWgXQRARc",
+  },
+  {
+    title: "Creator settlement",
+    body: "After expiry, the treasury PDA pays the 0.05 SOL winning bid to the creator.",
+    signature:
+      "45safFAyiajhaC973JG4fNtSczKeGcXsjbeSVuGWZupTSJKRLzYsdWNzpmcQp6e1jzzXjnect3L2SjyWDndWE3mn",
+  },
+  {
+    title: "ClickCounter increment",
+    body: "A tracked-link redirect confirms a counter update on the link's ClickCounter PDA.",
+    signature:
+      "2tdRZSzvXsrrw62QwkTbWHQPQ1pUviHcp5x9mmRUZJBxBNrWd9r9DZnTxkcLS1cPW43FsQSPwfiBxxBZdQVd9F6u",
   },
 ];
 
@@ -111,6 +137,35 @@ export function VerifiedOnSolana({
           </li>
         ))}
       </ol>
+
+      <div className="mt-6">
+        <p className="text-[12.5px] uppercase tracking-[0.12em] text-ash">
+          Proof — historical devnet transactions from this deployed program
+        </p>
+        <div className="mt-3 grid gap-3 sm:grid-cols-3">
+          {PROOFS.map((proof) => (
+            <a
+              key={proof.signature}
+              href={explorerTx(proof.signature)}
+              target="_blank"
+              rel="noopener noreferrer"
+              title="Open this transaction on Solana Explorer (devnet)"
+              className="group rounded-[12px] border border-hairline bg-paper p-4 transition-colors hover:border-accent/40"
+            >
+              <p className="flex items-center justify-between gap-2 text-[14px] font-medium text-ink">
+                {proof.title}
+                <ExternalIcon className="size-3.5 shrink-0 text-ash group-hover:text-accent" />
+              </p>
+              <p className="mt-1.5 text-[12.5px] leading-[1.55] text-graphite">
+                {proof.body}
+              </p>
+              <p className="mt-2.5 truncate font-mono text-[11.5px] text-ash underline decoration-hairline-strong underline-offset-4 group-hover:text-accent group-hover:decoration-accent">
+                {proof.signature}
+              </p>
+            </a>
+          ))}
+        </div>
+      </div>
 
       {recent.length > 0 ? (
         <div className="mt-6">

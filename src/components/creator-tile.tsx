@@ -209,14 +209,20 @@ function CreatorTileImpl({
                 className={`mt-1.5 whitespace-nowrap text-[26px] font-semibold leading-none tracking-[-0.03em] sm:text-[30px] ${live.lastBid ? "bid-pop" : ""}`}
                 key={live.lastBid?.id ?? "initial"}
               >
-                <span ref={bidRef} suppressHydrationWarning>
-                  {live.currentBidSol === null
-                    ? "—"
-                    : formatSol(live.currentBidSol)}
-                </span>{" "}
-                <span className="font-sans text-[13px] tracking-normal text-graphite">
-                  SOL
-                </span>
+                {live.currentBidSol !== null && live.currentBidSol > 0 ? (
+                  <>
+                    <span ref={bidRef} suppressHydrationWarning>
+                      {formatSol(live.currentBidSol)}
+                    </span>{" "}
+                    <span className="font-sans text-[13px] tracking-normal text-graphite">
+                      SOL
+                    </span>
+                  </>
+                ) : (
+                  <span className="text-[15px] font-medium tracking-normal text-ash">
+                    {live.currentBidSol === null ? "—" : "No bids yet"}
+                  </span>
+                )}
               </p>
               <p className="countdown-live text-right text-[15px] tabular-nums" data-urgent-color>
                 <span ref={countdownRef} suppressHydrationWarning>

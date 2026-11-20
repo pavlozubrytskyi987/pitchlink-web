@@ -15,6 +15,7 @@ import { CreatorTile, type TileLive } from "@/components/creator-tile";
 import { CREATORS, type Creator } from "@/data/creators";
 import { ProofList } from "@/components/chain-status";
 import { SiteHeader } from "@/components/site-header";
+import { SponsorshipCard } from "@/components/sponsorship-card";
 import { VerifiedOnSolana } from "@/components/verified-on-solana";
 import { subscribeFeed, type BidEntry } from "@/lib/bid-feed";
 import { PROGRAM_ID } from "@/lib/config";
@@ -214,12 +215,12 @@ export function LiveBoard({ creators = CREATORS, live }: Props) {
       </SiteHeader>
 
       <main className="mx-auto max-w-[1320px] px-5 pb-20 sm:px-8">
-        <section className="grid gap-10 pb-12 pt-12 sm:pt-16 md:grid-cols-[minmax(0,1fr)_300px] md:items-end md:gap-12 lg:grid-cols-[minmax(0,1fr)_340px] lg:gap-20 lg:pb-14">
+        <section className="grid gap-8 pb-8 pt-10 sm:pt-12 md:grid-cols-[minmax(0,1fr)_300px] md:items-end md:gap-12 lg:grid-cols-[minmax(0,1fr)_340px] lg:gap-20">
           <div className="min-w-0">
-            <h1 className="max-w-[18ch] text-[40px] font-semibold leading-[1.02] tracking-[-0.03em] text-balance sm:text-[58px]">
+            <h1 className="max-w-[18ch] text-[40px] font-semibold leading-[1.02] tracking-[-0.03em] text-balance sm:text-[52px]">
               Your audience is worth more than your follower count.
             </h1>
-            <p className="mt-6 max-w-[58ch] text-[16px] leading-[1.6] text-graphite sm:text-[17px]">
+            <p className="mt-5 max-w-[58ch] text-[16px] leading-[1.6] text-graphite sm:text-[17px]">
               Pitchlink is a sponsorship marketplace where crypto creators
               auction ad placements in their videos. Brands bid SOL, creators
               get paid through on-chain settlement, and auction activity is
@@ -250,7 +251,7 @@ export function LiveBoard({ creators = CREATORS, live }: Props) {
 
         <div
           id="up-for-auction"
-          className="mt-16 flex scroll-mt-24 flex-wrap items-end justify-between gap-x-6 gap-y-3 border-b border-hairline pb-4 sm:mt-20"
+          className="mt-10 flex scroll-mt-24 flex-wrap items-end justify-between gap-x-6 gap-y-3 border-b border-hairline pb-4 sm:mt-12"
         >
           <div className="flex min-w-0 flex-col gap-1">
             <div className="flex items-baseline gap-3">
@@ -285,13 +286,24 @@ export function LiveBoard({ creators = CREATORS, live }: Props) {
           </div>
         </div>
 
+        {sorted.length === 1 && hero ? (
+          <div className="mt-6">
+            <SponsorshipCard
+              creator={hero}
+              chain={heroChain}
+              clicks={
+                hero.auctionCreatorPubkey &&
+                hero.auctionCreatorPubkey in clicksByCreator
+                  ? clicksByCreator[hero.auctionCreatorPubkey]
+                  : null
+              }
+              bidSignature={latestReal[hero.slug]?.signature ?? null}
+            />
+          </div>
+        ) : (
         <div
           ref={gridRef}
-          className={
-            sorted.length === 1
-              ? "mt-8 mx-auto grid max-w-[460px] gap-y-12 sm:max-w-[520px]"
-              : "mt-8 grid grid-cols-2 gap-x-4 gap-y-12 sm:gap-x-6 md:grid-cols-3 lg:grid-cols-4 lg:gap-x-8 lg:gap-y-14"
-          }
+          className="mt-8 grid grid-cols-2 gap-x-4 gap-y-12 sm:gap-x-6 md:grid-cols-3 lg:grid-cols-4 lg:gap-x-8 lg:gap-y-14"
         >
           {sorted.map((creator) => {
             const real = latestReal[creator.slug];
@@ -323,6 +335,7 @@ export function LiveBoard({ creators = CREATORS, live }: Props) {
             );
           })}
         </div>
+        )}
 
         <HowItWorks />
         <ScopeSection />
@@ -352,7 +365,7 @@ const STEPS = [
   },
   {
     title: "Track redirect activity",
-    body: "Every tracked-link visit submits a Solana transaction that updates a public counter.",
+    body: "Every tracked-link visit submits a Solana transaction; confirmed updates appear on a public counter.",
   },
 ];
 

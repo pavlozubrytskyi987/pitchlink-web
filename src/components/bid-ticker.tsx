@@ -95,7 +95,7 @@ export function BidTicker() {
         <div className="relative h-full min-w-0 flex-1 overflow-hidden border-l border-hairline">
           {empty ? (
             <p className="flex h-full items-center pl-5 text-[13px] text-ash">
-              No bids yet on devnet. The first one shows up here.
+              Watching for new bids — each confirmed bid appears here with its Explorer link.
             </p>
           ) : (
             <>
