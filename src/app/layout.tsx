@@ -17,9 +17,9 @@ const mono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Pitchlink: creator ad slots, priced by real conversion",
+  title: "Pitchlink: auction sponsorship slots for crypto creators",
   description:
-    "Brands bid SOL for a slot in a crypto creator's next video. The winner gets a tracked link and every click is recorded on Solana.",
+    "Small crypto creators auction sponsorship slots in their videos. Brands bid SOL through program-controlled escrow on Solana.",
 };
 
 export const viewport: Viewport = {

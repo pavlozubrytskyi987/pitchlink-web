@@ -215,42 +215,44 @@ export function LiveBoard({ creators = CREATORS, live }: Props) {
       <main className="mx-auto max-w-[1320px] px-5 pb-20 sm:px-8">
         <section className="grid gap-10 pb-12 pt-12 sm:pt-16 md:grid-cols-[minmax(0,1fr)_300px] md:items-end md:gap-12 lg:grid-cols-[minmax(0,1fr)_340px] lg:gap-20 lg:pb-14">
           <div className="min-w-0">
-            <p className="font-mono text-[11px] uppercase tracking-[0.25em] text-accent">
-              On-chain creator ads · Solana
-            </p>
-            <h1 className="mt-4 max-w-[16ch] text-[40px] font-semibold leading-[1.02] tracking-[-0.03em] text-balance sm:text-[58px]">
-              Creator ad slots, priced by real conversion.
+            <h1 className="max-w-[18ch] text-[40px] font-semibold leading-[1.02] tracking-[-0.03em] text-balance sm:text-[58px]">
+              Your audience is worth more than your follower count.
             </h1>
             <p className="mt-6 max-w-[58ch] text-[16px] leading-[1.6] text-graphite sm:text-[17px]">
-              Pitchlink is an on-chain ad marketplace for small crypto
-              creators. Brands bid SOL for one slot in a creator&rsquo;s
-              next video, the winner gets a tracked link, and every click
-              through it is counted on Solana. Creators get paid for what
-              their audience actually does — not for follower count.
+              Small crypto creators can auction sponsorship slots in their
+              videos. Brands bid SOL, the auction runs through
+              program-controlled escrow, and the results are publicly
+              inspectable on Solana.
             </p>
             <div className="mt-7 flex flex-wrap items-center gap-3">
-              <Link
-                href="/auction"
+              <a
+                href="#up-for-auction"
                 className="inline-flex h-12 items-center gap-2 rounded-full bg-ink px-6 text-[14px] font-medium text-paper shadow-[0_10px_28px_-14px_rgb(0_0_0/0.45)] transition-colors hover:bg-[#262626]"
               >
-                Enter the live auction
+                Explore sponsorships
                 <span aria-hidden>→</span>
-              </Link>
-              <a
-                href="#how-it-works"
+              </a>
+              <Link
+                href="/auction"
                 className="inline-flex h-12 items-center gap-2 rounded-full border border-hairline-strong px-5 text-[14px] text-ink transition-colors hover:border-ink"
               >
-                How it works
-                <span aria-hidden>↓</span>
-              </a>
+                Create an ad slot
+                <span aria-hidden>→</span>
+              </Link>
             </div>
+            <p className="mt-4 font-mono text-[11px] uppercase tracking-[0.25em] text-ash">
+              Built on Solana · Devnet
+            </p>
           </div>
           <ProofList programId={PROGRAM_ID} auctionAddress={heroChain?.address ?? null} />
         </section>
 
         <HowItWorks />
 
-        <div className="mt-16 flex flex-wrap items-end justify-between gap-x-6 gap-y-3 border-b border-hairline pb-4 sm:mt-20">
+        <div
+          id="up-for-auction"
+          className="mt-16 flex scroll-mt-24 flex-wrap items-end justify-between gap-x-6 gap-y-3 border-b border-hairline pb-4 sm:mt-20"
+        >
           <div className="flex min-w-0 flex-col gap-1">
             <div className="flex items-baseline gap-3">
               <h2 className="text-[24px] font-semibold leading-none tracking-[-0.025em] sm:text-[28px]">
@@ -343,8 +345,8 @@ const STEPS = [
     body: "The top bid pays the creator when the auction closes, and your logo goes in the video.",
   },
   {
-    title: "Count every click",
-    body: "You get a tracked link. Each click through it is recorded on Solana.",
+    title: "Track redirect activity",
+    body: "Every tracked-link visit submits a Solana transaction that updates a public counter.",
   },
 ];
 
