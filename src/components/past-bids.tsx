@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { ExternalIcon } from "@/components/icons";
 import { brandFor } from "@/data/brands";
 import { explorerAddress, explorerTx, shortAddress } from "@/lib/explorer";
-import { getAllBids, type BidRecord } from "@/lib/program";
+import { findAuction, getAllBids, type BidRecord } from "@/lib/program";
 
 const LAMPORTS = 1_000_000_000;
 
@@ -39,9 +39,18 @@ export function PastBids() {
   useEffect(() => {
     let alive = true;
     setError(null);
-    getAllBids(connection)
-      .then((rows) => {
-        if (alive) setBids(rows);
+    Promise.all([getAllBids(connection), findAuction(connection)])
+      .then(([rows, live]) => {
+        // Keep the label honest: bids on the live auction are shown in the
+        // panel above, so this history lists only earlier auctions.
+        const liveKey = live?.publicKey.toBase58();
+        if (alive) {
+          setBids(
+            liveKey
+              ? rows.filter((r) => r.auction?.toBase58() !== liveKey)
+              : rows,
+          );
+        }
       })
       .catch((err) => {
         if (alive) setError(friendlyError(err));
