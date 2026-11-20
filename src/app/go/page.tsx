@@ -70,7 +70,7 @@ export default function GoDashboardPage() {
           <tr className="border-b">
             <th className="py-2">Short URL</th>
             <th className="py-2">Destination</th>
-            <th className="py-2 text-right">Clicks</th>
+            <th className="py-2 text-right">Redirect events</th>
           </tr>
         </thead>
         <tbody>

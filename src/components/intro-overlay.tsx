@@ -138,9 +138,9 @@ export function IntroOverlay() {
         </h1>
         <p className="mx-auto mt-6 max-w-[54ch] text-[15px] leading-[1.6] text-graphite sm:text-[17px]">
           Small creators with real action get bid up by brands who want
-          conversion — not reach. Every bid, every click, every payout
-          on Solana. No agencies. No rate cards. No DMs. The auction
-          sets the price, the chain proves the value.
+          that action — not reach. Every bid, every redirect, every
+          payout recorded on Solana. No agencies. No rate cards. No DMs.
+          The auction sets the price, the chain proves the value.
         </p>
         <button
           type="button"

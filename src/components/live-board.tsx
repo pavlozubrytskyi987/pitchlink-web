@@ -327,8 +327,8 @@ export function LiveBoard({ creators = CREATORS, live }: Props) {
 
         <p className="mt-20 max-w-[72ch] border-t border-hairline pt-5 text-[12.5px] leading-relaxed text-ash">
           Every number in this app is on-chain and checkable on Solana devnet:
-          bid amounts, settle amounts, click counts. Anything else is left out.
-          Verified markers open the transaction on Solana Explorer.
+          bid amounts, settle amounts, redirect-event counts. Anything else is
+          left out. Markers open the transaction on Solana Explorer.
         </p>
       </main>
     </div>

@@ -8,7 +8,7 @@ export function ConversionStat({ creator }: { creator: string | null }) {
   return (
     <div className="mt-10 border-t border-ink pt-3">
       <div className="flex items-baseline justify-between gap-3">
-        <p className="text-[13px] font-medium">Clicks on-chain</p>
+        <p className="text-[13px] font-medium">Recorded redirect events</p>
         <p className="text-[12px] text-ash">
           {!creator ? "no link yet" : loading ? "reading…" : "live"}
         </p>
@@ -21,8 +21,8 @@ export function ConversionStat({ creator }: { creator: string | null }) {
         {!creator ? "—" : clicks.toLocaleString("en-US")}
       </p>
       <p className="mt-2 max-w-[48ch] text-[14px] leading-snug text-graphite">
-        Verified clicks through this creator&rsquo;s tracked link, counted on
-        Solana. This is what the slot is priced on.
+        These records show counter updates on Solana. They don&rsquo;t
+        independently verify human traffic or customer acquisition.
       </p>
     </div>
   );

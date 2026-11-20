@@ -184,7 +184,7 @@ function CreatorTileImpl({
           data-empty={live.onchainClicks == null || live.onchainClicks === 0}
         >
           <div className="flex items-baseline justify-between gap-2">
-            <p className={LABEL}>Clicks on-chain</p>
+            <p className={LABEL}>Recorded redirect events</p>
             <p className="text-[9px] font-medium uppercase tracking-[0.14em] text-[#c4c1ba]">
               {live.onchainClicks == null ? "no link yet" : "live"}
             </p>
@@ -196,7 +196,8 @@ function CreatorTileImpl({
           </p>
         </div>
         <p className="mt-2 text-[12.5px] leading-snug text-ash">
-          Verified clicks through this creator&rsquo;s tracked link, counted on Solana.
+          These records show counter updates on Solana. They don&rsquo;t
+          independently verify human traffic or customer acquisition.
         </p>
 
         {isLive ? (
