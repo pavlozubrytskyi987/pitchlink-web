@@ -1,6 +1,11 @@
 // Server-side relayer: signs init_click_counter and increment_click on behalf
 // of visitors. Loaded lazily and only in Node (server-only guarded).
-// The keypair path comes from RELAYER_KEYPAIR in .env (gitignored).
+//
+// Key material comes from (in priority order):
+//   1. RELAYER_SECRET_KEY — base58 or JSON-array secret key. This is the
+//      Vercel/serverless path: no filesystem involved, never exposed to the
+//      browser bundle (no NEXT_PUBLIC_ prefix).
+//   2. RELAYER_KEYPAIR — path to a local keypair JSON (dev only).
 
 import "server-only";
 
@@ -14,14 +19,28 @@ import {
   Transaction,
   VersionedTransaction,
 } from "@solana/web3.js";
+import bs58 from "bs58";
 import { rpcEndpoint } from "@/lib/config";
 import type { PitchlinkWallet } from "@/lib/program";
+
+function secretFromEnv(): Uint8Array | null {
+  const raw = process.env.RELAYER_SECRET_KEY?.trim();
+  if (!raw) return null;
+  try {
+    if (raw.startsWith("[")) {
+      return Uint8Array.from(JSON.parse(raw) as number[]);
+    }
+    return bs58.decode(raw);
+  } catch {
+    throw new Error("RELAYER_SECRET_KEY is neither a JSON array nor base58");
+  }
+}
 
 function keypairPath(): string {
   const env = process.env.RELAYER_KEYPAIR?.trim();
   if (!env) {
     throw new Error(
-      "RELAYER_KEYPAIR not set. Point it at a funded devnet keypair JSON.",
+      "No relayer key: set RELAYER_SECRET_KEY (base58/JSON) or RELAYER_KEYPAIR (file path).",
     );
   }
   const resolved = env.startsWith("~/")
@@ -33,6 +52,11 @@ function keypairPath(): string {
 let cachedKeypair: Keypair | null = null;
 export function relayerKeypair(): Keypair {
   if (cachedKeypair) return cachedKeypair;
+  const fromEnv = secretFromEnv();
+  if (fromEnv) {
+    cachedKeypair = Keypair.fromSecretKey(fromEnv);
+    return cachedKeypair;
+  }
   const raw = fs.readFileSync(keypairPath(), "utf8");
   cachedKeypair = Keypair.fromSecretKey(Uint8Array.from(JSON.parse(raw)));
   return cachedKeypair;

@@ -236,6 +236,13 @@ export function LiveBoard({ creators = CREATORS, live }: Props) {
                 List a sponsorship
                 <span aria-hidden>→</span>
               </Link>
+              <Link
+                href="/try"
+                className="inline-flex h-12 items-center gap-2 rounded-full border border-accent/40 px-5 text-[14px] font-medium text-accent transition-colors hover:border-accent"
+              >
+                Try live tracking
+                <span aria-hidden>→</span>
+              </Link>
             </div>
             <p className="mt-4 font-mono text-[11px] uppercase tracking-[0.25em] text-ash">
               Built on Solana · Devnet

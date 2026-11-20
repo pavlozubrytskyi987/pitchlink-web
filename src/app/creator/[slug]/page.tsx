@@ -1,8 +1,8 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ConversionStat } from "@/components/conversion-stat";
+import { CreatorPerformance } from "@/components/creator-performance";
 import { SiteHeader } from "@/components/site-header";
-import { CREATORS } from "@/data/creators";
+import { CREATORS, DEMO_CREATOR_PUBKEY } from "@/data/creators";
 
 export function generateStaticParams() {
   return CREATORS.map((creator) => ({ slug: creator.slug }));
@@ -60,7 +60,16 @@ export default async function CreatorPage({ params }: { params: Promise<{ slug: 
               {creator.niche}, {creator.handle}.
             </p>
 
-            <ConversionStat creator={creator.creatorPubkey ?? creator.auctionCreatorPubkey} />
+            <CreatorPerformance
+              creators={[
+                creator.creatorPubkey,
+                creator.auctionCreatorPubkey,
+                // Hackathon demo auctions use a rotated creator wallet
+                // (one PDA per creator, init-only). Include it so the
+                // legitimately-claimed demo campaign appears on this profile.
+                creator.status === "live" ? DEMO_CREATOR_PUBKEY : null,
+              ].filter((k, i, arr): k is string => Boolean(k) && arr.indexOf(k) === i)}
+            />
 
             <div className="mt-10 border-t border-hairline pt-4">
               {hasAuction ? (

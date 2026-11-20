@@ -11,7 +11,7 @@ export async function GET(
   { params }: { params: Promise<{ linkId: string }> },
 ) {
   const { linkId } = await params;
-  const link = getLink(linkId);
+  const link = await getLink(linkId);
   if (!link) return NextResponse.json({ error: "Link not found" }, { status: 404 });
 
   const counter = await getClickCounter(serverConnection(), linkId).catch(() => null);

@@ -6,7 +6,7 @@ import { useCallback, useEffect, useState } from "react";
 import { CheckIcon, ExternalIcon } from "@/components/icons";
 import { useClaim } from "@/components/claim-context";
 import { pushRealBid } from "@/lib/bid-feed";
-import { brandFor } from "@/data/brands";
+import { brandDisplayFor, useDynamicBrands } from "@/lib/use-brands";
 import { CREATORS, HERO_CREATOR_PUBKEY, MIN_BID_SOL } from "@/data/creators";
 import { auctionOverride } from "@/lib/demo-auction";
 import { explorerAddress, explorerTx } from "@/lib/explorer";
@@ -34,6 +34,7 @@ export function AuctionPanel() {
   const { connection } = useConnection();
   const wallet = useAnchorWallet();
   const { setClaim } = useClaim();
+  const dynamicBrands = useDynamicBrands();
   const [auction, setAuction] = useState<AuctionAccount | null>(null);
   const [bids, setBids] = useState<BidRecord[]>([]);
   const [loading, setLoading] = useState(true);
@@ -443,7 +444,7 @@ export function AuctionPanel() {
               <ul className="mt-1.5 divide-y divide-hairline">
                 {bids.map((bid, i) => {
                   const bidder = bid.bidder.toBase58();
-                  const brand = brandFor(bidder);
+                  const brand = brandDisplayFor(bidder, dynamicBrands);
                   return (
                     <li key={bid.signature}>
                       <a

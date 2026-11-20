@@ -1,16 +1,16 @@
 "use client";
 
+import { useWallet } from "@solana/wallet-adapter-react";
 import { useEffect, useState } from "react";
 import { CheckIcon, ExternalIcon } from "@/components/icons";
 import type { SlotClaim } from "@/components/claim-context";
 import { CREATORS } from "@/data/creators";
-import { getOrMintTrackedLink, type TrackedLink } from "@/lib/claim-link";
+import {
+  campaignForAuction,
+  setupCampaign,
+  type CampaignDto,
+} from "@/lib/campaign-client";
 import { explorerAddress, explorerTx, shortAddress } from "@/lib/explorer";
-
-type LinkState =
-  | { status: "loading" }
-  | { status: "ready"; link: TrackedLink }
-  | { status: "offline" };
 
 function creatorFor(claim: SlotClaim) {
   return (
@@ -27,7 +27,13 @@ function formatSol(sol: number): string {
 /**
  * The win moment, layered over the product stage:
  * stamp → winning logo flies in and locks onto the placement → card with
- * the settlement proof and the freshly generated tracked link.
+ * the settlement proof and the tracked-link handoff.
+ *
+ * The tracked link is no longer minted silently with a hardcoded
+ * destination. The WINNER configures their campaign (brand, destination,
+ * logo) and authorizes it with a wallet signature; the server verifies the
+ * signature AND the on-chain win before minting. Visitors without the
+ * winner's wallet see the read-only state.
  */
 export function SlotClaimed({
   claim,
@@ -37,30 +43,34 @@ export function SlotClaimed({
   logoUrl: string | null;
 }) {
   const [open, setOpen] = useState(true);
-  const [link, setLink] = useState<LinkState>({ status: "loading" });
   const [copied, setCopied] = useState(false);
   const creator = creatorFor(claim);
   const preview = claim.auction === "PREVIEW";
 
+  const wallet = useWallet();
+  const connected = wallet.publicKey?.toBase58() ?? null;
+  const isWinner = connected === claim.winner;
+
+  const [campaign, setCampaign] = useState<CampaignDto | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [brandName, setBrandName] = useState("");
+  const [destination, setDestination] = useState("");
+  const [logo, setLogo] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
   useEffect(() => {
     let alive = true;
-    setLink({ status: "loading" });
-    // SABG destination template; server substitutes {linkId} after mint so
-    // ?ref=<id> can attribute later off-chain conversion back to this click.
-    const destination = "https://sabg.fun/?ref={linkId}";
-    // Let the reveal land before the link appears.
-    const started = Date.now();
-    getOrMintTrackedLink(claim.auction, destination, claim.creator).then((result) => {
-      const wait = Math.max(0, 1700 - (Date.now() - started));
-      window.setTimeout(() => {
-        if (!alive) return;
-        setLink(result ? { status: "ready", link: result } : { status: "offline" });
-      }, wait);
+    setLoading(true);
+    campaignForAuction(claim.auction).then((row) => {
+      if (!alive) return;
+      setCampaign(row);
+      setLoading(false);
     });
     return () => {
       alive = false;
     };
-  }, [claim.auction, creator?.slug]);
+  }, [claim.auction]);
 
   async function copy(url: string) {
     try {
@@ -69,6 +79,39 @@ export function SlotClaimed({
       window.setTimeout(() => setCopied(false), 1600);
     } catch {
       setCopied(false);
+    }
+  }
+
+  async function submit() {
+    if (!wallet.signMessage || !connected) return;
+    setBusy(true);
+    setError(null);
+    try {
+      const result = await setupCampaign({
+        wallet: connected,
+        auction: claim.auction,
+        brandName: brandName.trim(),
+        destination: destination.trim(),
+        logoUrl: logo.trim() || undefined,
+        signMessage: (m) => wallet.signMessage!(m),
+      });
+      const row = await campaignForAuction(claim.auction);
+      setCampaign(
+        row ?? {
+          linkId: result.linkId,
+          shortUrl: result.shortUrl,
+          auction: claim.auction,
+          creator: claim.creator,
+          wallet: connected,
+          brandName: brandName.trim(),
+          destination: destination.trim(),
+          logoUrl: logo.trim() || null,
+        },
+      );
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "campaign setup failed");
+    } finally {
+      setBusy(false);
     }
   }
 
@@ -84,6 +127,10 @@ export function SlotClaimed({
       </button>
     );
   }
+
+  const linkUrl = campaign
+    ? new URL(campaign.shortUrl, window.location.origin).toString()
+    : null;
 
   return (
     <div className="claim-root pointer-events-none fixed inset-0 z-20 overflow-hidden">
@@ -172,49 +219,91 @@ export function SlotClaimed({
         ) : null}
 
         <div className="mt-4 border-t border-hairline pt-4">
-          <p className="flex items-center gap-1.5 text-[13px] font-medium">
-            {link.status === "ready" ? (
-              <>Tracked link generated</>
-            ) : link.status === "loading" ? (
-              <>
+          {loading ? (
+            <>
+              <p className="flex items-center gap-1.5 text-[13px] font-medium">
                 <span className="live-dot size-[5px] rounded-full bg-accent" />
-                Generating tracked link
-              </>
-            ) : (
-              "Tracked link"
-            )}
-          </p>
-
-          {link.status === "ready" ? (
-            <div className="claim-link mt-2.5 flex items-center gap-2">
-              <a
-                href={link.link.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="min-w-0 flex-1 truncate rounded-[10px] border border-hairline-strong bg-wash px-3.5 py-2.5 font-mono text-[13px] text-ink transition-colors hover:border-ink"
-              >
-                {link.link.url.replace(/^https?:\/\//, "")}
-              </a>
-              <button
-                type="button"
-                onClick={() => void copy(link.link.url)}
-                className="h-[42px] shrink-0 rounded-full bg-ink px-5 text-[14px] font-medium text-paper transition-colors hover:bg-[#262626]"
-              >
-                {copied ? "Copied" : "Copy"}
-              </button>
-            </div>
-          ) : link.status === "loading" ? (
-            <div className="claim-shimmer mt-2.5 h-[42px] rounded-[10px] border border-hairline bg-wash" />
+                Loading campaign
+              </p>
+              <div className="claim-shimmer mt-2.5 h-[42px] rounded-[10px] border border-hairline bg-wash" />
+            </>
+          ) : campaign && linkUrl ? (
+            <>
+              <p className="flex items-center gap-1.5 text-[13px] font-medium">
+                {campaign.brandName} — tracked link
+              </p>
+              <div className="claim-link mt-2.5 flex items-center gap-2">
+                <a
+                  href={linkUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="min-w-0 flex-1 truncate rounded-[10px] border border-hairline-strong bg-wash px-3.5 py-2.5 font-mono text-[13px] text-ink transition-colors hover:border-ink"
+                >
+                  {linkUrl.replace(/^https?:\/\//, "")}
+                </a>
+                <button
+                  type="button"
+                  onClick={() => void copy(linkUrl)}
+                  className="h-[42px] shrink-0 rounded-full bg-ink px-5 text-[14px] font-medium text-paper transition-colors hover:bg-[#262626]"
+                >
+                  {copied ? "Copied" : "Copy"}
+                </button>
+              </div>
+              <p className="mt-2.5 text-[12.5px] leading-snug text-ash">
+                Each visit through this link submits a Solana transaction that
+                updates a public counter.
+              </p>
+            </>
+          ) : isWinner ? (
+            <>
+              <p className="text-[13px] font-medium">Set up your campaign</p>
+              <p className="mt-1 text-[12.5px] leading-snug text-ash">
+                You won this slot. Configure the brand destination, then sign
+                with your wallet to generate the tracked link.
+              </p>
+              <div className="mt-3 space-y-2">
+                <input
+                  value={brandName}
+                  onChange={(e) => setBrandName(e.target.value)}
+                  placeholder="Brand name"
+                  maxLength={40}
+                  className="w-full rounded-[10px] border border-hairline-strong bg-wash px-3.5 py-2.5 text-[13px] outline-none placeholder:text-ash focus:border-ink"
+                />
+                <input
+                  value={destination}
+                  onChange={(e) => setDestination(e.target.value)}
+                  placeholder="https://your-site.com/?ref={linkId}"
+                  className="w-full rounded-[10px] border border-hairline-strong bg-wash px-3.5 py-2.5 font-mono text-[12.5px] outline-none placeholder:text-ash focus:border-ink"
+                />
+                <input
+                  value={logo}
+                  onChange={(e) => setLogo(e.target.value)}
+                  placeholder="Logo image URL (optional)"
+                  className="w-full rounded-[10px] border border-hairline-strong bg-wash px-3.5 py-2.5 font-mono text-[12.5px] outline-none placeholder:text-ash focus:border-ink"
+                />
+                <button
+                  type="button"
+                  disabled={busy || !brandName.trim() || !destination.trim()}
+                  onClick={() => void submit()}
+                  className="h-[42px] w-full rounded-full bg-ink text-[14px] font-medium text-paper transition-colors hover:bg-[#262626] disabled:opacity-40"
+                >
+                  {busy ? "Sign in your wallet…" : "Sign & create tracked link"}
+                </button>
+                {error ? <p className="text-[12.5px] text-[#b3402e]">{error}</p> : null}
+              </div>
+            </>
           ) : (
-            <p className="mt-2.5 rounded-[10px] border border-dashed border-hairline-strong px-3.5 py-2.5 text-[13px] text-graphite">
-              The link service isn&rsquo;t connected on this build yet.
-            </p>
+            <>
+              <p className="text-[13px] font-medium">Tracked link</p>
+              <p className="mt-2.5 rounded-[10px] border border-dashed border-hairline-strong px-3.5 py-2.5 text-[13px] text-graphite">
+                The winner{" "}
+                <span className="font-mono text-[12.5px]">{shortAddress(claim.winner)}</span>{" "}
+                can connect their wallet to configure the campaign and generate
+                the tracked link.
+              </p>
+            </>
           )}
 
-          <p className="mt-2.5 text-[12.5px] leading-snug text-ash">
-            Each visit through this link submits a Solana transaction that
-            updates a public counter.
-          </p>
           <p className="mt-2 border-t border-hairline pt-2.5 text-[12px] leading-snug text-ash">
             Solana verifies the auction&rsquo;s recorded financial actions.
             Recorded redirect events are not the same as verified customers.

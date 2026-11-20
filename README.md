@@ -34,14 +34,23 @@ confirmed devnet transaction that anyone can inspect on Solana Explorer.
 - **Frontend** — Next.js (App Router) with `@solana/wallet-adapter`
   (Phantom, Solflare). All auction reads and writes go straight from the
   browser wallet to the program; there is no custodial backend.
-- **Tracked-link service** — a thin Next.js API layer so that ad
-  viewers never need a wallet:
+- **Tracked-link + campaign service** — a thin Next.js API layer so
+  that ad viewers never need a wallet:
   - `src/lib/relayer.ts` loads a funded devnet keypair from
-    `RELAYER_KEYPAIR` and signs `init_click_counter` / `increment_click`.
-  - `POST /api/links` mints a tracked link and initializes its
-    `ClickCounter` PDA.
-  - `GET /go/[linkId]` is the public redirect: it 302s immediately and
-    submits `increment_click` off the critical path via `after()`.
+    `RELAYER_SECRET_KEY` (Vercel) or `RELAYER_KEYPAIR` (local file) and
+    signs `init_click_counter` / `increment_click`. Never
+    `NEXT_PUBLIC_*`.
+  - Winner campaign setup (`POST /api/campaigns`) requires a
+    Phantom-signed, single-use nonce challenge **and** an on-chain
+    check that the wallet is the settled auction's highest bidder.
+    Brand name / destination / logo are advertiser-provided metadata,
+    not on-chain-verified identity.
+  - Persistence: Vercel Blob in production (`BLOB_READ_WRITE_TOKEN`),
+    local `.pitchlink/store.json` in dev. Counts are **never** stored
+    off-chain — the ClickCounter PDA is the only source of truth.
+  - `GET /go/[linkId]` 302s immediately and submits `increment_click`
+    via Next.js `after()`. Rate-limited per IP.
+  - Public judge demo: `/try` ("Try live tracking") — no wallet needed.
 - **Key accounts** — one auction PDA per creator (seeded by creator
   wallet), a program-controlled escrow (treasury) PDA that holds bid
   lamports, and one `ClickCounter` PDA per tracked link.
@@ -90,12 +99,36 @@ npm run dev
 Open http://localhost:3000. Connect a devnet wallet with devnet SOL to
 place a bid on the live auction.
 
-Environment variables:
+Environment variables — see `.env.example` for the full list:
 
 - `NEXT_PUBLIC_PROGRAM_ID` — defaults to the deployed devnet program.
-- `NEXT_PUBLIC_QUICKNODE_DEVNET_URL` — optional; a dedicated RPC avoids
-  public-devnet rate limits (429s). Blank uses the public devnet RPC.
-- `RELAYER_KEYPAIR` — server-only path to the funded relayer keypair.
+- `NEXT_PUBLIC_QUICKNODE_DEVNET_URL` / `SOLANA_RPC_URL` — dedicated
+  RPC. Prefer `SOLANA_RPC_URL` for server-only (never browser-bundled).
+- `RELAYER_SECRET_KEY` — server-only base58/JSON secret (Vercel).
+  Locally you may use `RELAYER_KEYPAIR` instead (file path).
+- `BLOB_READ_WRITE_TOKEN` — required on Vercel for shared link/campaign
+  persistence across serverless invocations.
+- `LINKS_SEED_JSON` / `CAMPAIGNS_SEED_JSON` — optional seed so a fresh
+  deploy ships a legitimately-claimed demo campaign.
+
+## Deploy (Vercel)
+
+```bash
+npm i -g vercel
+vercel link
+# Create a Blob store in the Vercel dashboard, then:
+vercel env add BLOB_READ_WRITE_TOKEN
+vercel env add RELAYER_SECRET_KEY
+vercel env add SOLANA_RPC_URL
+vercel env add NEXT_PUBLIC_QUICKNODE_DEVNET_URL
+# Optional: seed the claimed SABG demo campaign (LINKS_SEED_JSON /
+# CAMPAIGNS_SEED_JSON). Do not invent campaigns that were never claimed.
+vercel --prod
+```
+
+Do **not** put private keys in git or in `NEXT_PUBLIC_*` variables.
+DNS for pitchlink.xyz is intentionally left alone until the deploy is
+verified.
 
 ## Testing
 

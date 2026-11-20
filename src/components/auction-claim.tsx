@@ -2,7 +2,7 @@
 
 import { useClaim } from "@/components/claim-context";
 import { SlotClaimed } from "@/components/slot-claimed";
-import { brandFor } from "@/data/brands";
+import { brandDisplayFor, useDynamicBrands } from "@/lib/use-brands";
 
 /**
  * Renders the post-settlement claim reveal over the auction page. The
@@ -11,7 +11,8 @@ import { brandFor } from "@/data/brands";
  */
 export function AuctionClaim() {
   const { claim } = useClaim();
+  const dynamicBrands = useDynamicBrands();
   if (!claim) return null;
-  const brand = brandFor(claim.winner);
+  const brand = brandDisplayFor(claim.winner, dynamicBrands);
   return <SlotClaimed claim={claim} logoUrl={brand?.logo ?? null} />;
 }

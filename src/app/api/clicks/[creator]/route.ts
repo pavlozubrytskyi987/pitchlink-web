@@ -21,7 +21,7 @@ export async function GET(
     return NextResponse.json({ error: "creator must be a base58 pubkey" }, { status: 400 });
   }
 
-  const owned = listLinks().filter((l) => l.creator === creator);
+  const owned = (await listLinks()).filter((l) => l.creator === creator);
   const details = await Promise.all(
     owned.map(async (link) => {
       const counter = await getClickCounter(serverConnection(), link.id).catch(() => null);

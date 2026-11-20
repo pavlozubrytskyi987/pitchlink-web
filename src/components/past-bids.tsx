@@ -3,7 +3,7 @@
 import { useConnection } from "@solana/wallet-adapter-react";
 import { useEffect, useState } from "react";
 import { ExternalIcon } from "@/components/icons";
-import { brandFor } from "@/data/brands";
+import { brandDisplayFor, useDynamicBrands } from "@/lib/use-brands";
 import { auctionOverride } from "@/lib/demo-auction";
 import { explorerAddress, explorerTx, shortAddress } from "@/lib/explorer";
 import { findAuction, getAllBids, type BidRecord } from "@/lib/program";
@@ -33,6 +33,7 @@ function friendlyError(err: unknown): string {
 
 export function PastBids() {
   const { connection } = useConnection();
+  const dynamicBrands = useDynamicBrands();
   const [bids, setBids] = useState<BidRecord[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [attempt, setAttempt] = useState(0);
@@ -103,7 +104,7 @@ export function PastBids() {
         <ul className="mt-4 divide-y divide-hairline">
           {bids!.map((bid) => {
             const bidder = bid.bidder.toBase58();
-            const brand = brandFor(bidder);
+            const brand = brandDisplayFor(bidder, dynamicBrands);
             return (
               <li
                 key={bid.signature}

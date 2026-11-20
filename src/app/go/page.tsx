@@ -10,9 +10,7 @@ interface LinkRow {
 }
 
 export default function GoDashboardPage() {
-  const [destination, setDestination] = useState("");
   const [links, setLinks] = useState<LinkRow[]>([]);
-  const [loading, setLoading] = useState(false);
 
   async function refresh() {
     const res = await fetch("/api/links");
@@ -29,41 +27,15 @@ export default function GoDashboardPage() {
     refresh();
   }, []);
 
-  async function create(e: React.FormEvent) {
-    e.preventDefault();
-    if (!destination.trim()) return;
-    setLoading(true);
-    await fetch("/api/links", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ destination: destination.trim() }),
-    });
-    setDestination("");
-    await refresh();
-    setLoading(false);
-  }
-
   return (
     <main className="p-8 max-w-2xl mx-auto">
       <h1 className="text-2xl font-bold mb-6">Cloaked Links</h1>
 
-      <form onSubmit={create} className="flex gap-2 mb-8">
-        <input
-          type="url"
-          value={destination}
-          onChange={(e) => setDestination(e.target.value)}
-          placeholder="https://example.com"
-          className="flex-1 border rounded px-3 py-2"
-          required
-        />
-        <button
-          type="submit"
-          disabled={loading}
-          className="bg-blue-600 text-white px-4 py-2 rounded disabled:opacity-50"
-        >
-          {loading ? "Minting…" : "Mint Link"}
-        </button>
-      </form>
+      <p className="mb-8 rounded border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-600">
+        Open minting is disabled. Tracked links are created by verified
+        auction winners through the signed campaign setup on the settled
+        auction page.
+      </p>
 
       <table className="w-full text-left text-sm">
         <thead>
