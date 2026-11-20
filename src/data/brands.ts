@@ -1,10 +1,10 @@
 // Known-brand registry. Maps a devnet bidder wallet (base58) to its brand.
 // Used anywhere a bid is displayed to swap the raw address for a logo+name.
-// Unknown wallets keep the truncated-address rendering — never invent branding.
+// Unknown wallets keep the truncated-address rendering - never invent branding.
 
 export type Brand = {
   name: string;
-  /** Path under /public — rendered with a plain <img>. */
+  /** Path under /public - rendered with a plain <img>. */
   logo: string;
 };
 

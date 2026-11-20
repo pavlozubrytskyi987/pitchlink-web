@@ -27,7 +27,7 @@ const LAMPORTS = BigInt("1000000000");
 
 /**
  * Right column of /auction. A financial instrument panel: bid, escrow,
- * settlement — every action backed by the on-chain program, every state
+ * settlement - every action backed by the on-chain program, every state
  * labeled so no impossible action is offered.
  */
 export function AuctionPanel() {
@@ -96,8 +96,8 @@ export function AuctionPanel() {
   const winnerKey = hasBids ? auction!.highestBidder.toBase58() : null;
 
   // Panel state machine. Never offer an action the program would reject:
-  //   open    — auction exists, time remains         -> bidding UI
-  //   no bids + time up                              -> "Ended — No winning bidder"
+  //   open    - auction exists, time remains         -> bidding UI
+  //   no bids + time up                              -> "Ended: No winning bidder"
   //   bids + time up, unsettled                      -> settle CTA (permissionless)
   //   settled                                        -> receipt
   const status: "open" | "ended-no-bids" | "awaiting-settle" | "settled" | null =
@@ -326,7 +326,7 @@ export function AuctionPanel() {
           {status === "ended-no-bids" ? (
             <div className="mt-4 rounded-[12px] border border-hairline bg-wash p-4">
               <p className="text-[14px] font-medium text-ink">
-                Ended — No winning bidder
+                Ended: No winning bidder
               </p>
               <p className="mt-1 text-[12.5px] leading-snug text-ash">
                 No bids were placed before the deadline, so there is nothing
@@ -424,7 +424,7 @@ export function AuctionPanel() {
                   <p>The creator can’t bid on their own auction.</p>
                 ) : null}
                 <p>
-                  Bids sit in program-controlled escrow — outbid? You&rsquo;re
+                  Bids sit in program-controlled escrow. Outbid? You&rsquo;re
                   refunded in the same transaction.
                 </p>
               </div>

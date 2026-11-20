@@ -20,7 +20,7 @@ function formatSol(lamports: bigint): string {
 
 /**
  * Historical BidPlaced events across every auction the program ever ran.
- * Reads straight from devnet — no local cache, no seeded entries. Empty
+ * Reads straight from devnet - no local cache, no seeded entries. Empty
  * state is the honest answer when nothing is on-chain yet.
  */
 function friendlyError(err: unknown): string {
@@ -81,7 +81,7 @@ export function PastBids() {
           </span>
         </summary>
         <p className="mt-1 text-[12.5px] text-ash">
-          Confirmed bids from earlier auctions run by this program — not bids on
+          Confirmed bids from earlier auctions run by this program, not bids on
           the auction shown above.
         </p>
 

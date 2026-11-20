@@ -89,7 +89,7 @@ export function SponsorshipCard({
         </li>
         <li className="flex gap-2.5">
           <span className="mt-[8px] size-[5px] shrink-0 rounded-full bg-accent" aria-hidden />
-          <span>Tracked advertiser link — confirmed visits update a public on-chain counter</span>
+          <span>Tracked advertiser link: confirmed visits update a public on-chain counter</span>
         </li>
         <li className="flex gap-2.5">
           <span className="mt-[8px] size-[5px] shrink-0 rounded-full bg-accent" aria-hidden />
@@ -121,7 +121,7 @@ export function SponsorshipCard({
             ) : status === "ended" ? (
               <span className="text-[15px] font-medium text-graphite">Ended</span>
             ) : (
-              <span className="text-[15px] font-medium text-ash">—</span>
+              <span className="text-[15px] font-medium text-ash">-</span>
             )}
           </p>
         </div>
@@ -129,7 +129,7 @@ export function SponsorshipCard({
           <p className={LABEL}>Recorded redirect events</p>
           <p className="mt-1 text-[20px] font-semibold leading-none tracking-[-0.02em]">
             {clicks === null ? (
-              <span className="text-[15px] font-medium text-ash">—</span>
+              <span className="text-[15px] font-medium text-ash">-</span>
             ) : (
               clicks.toLocaleString("en-US")
             )}

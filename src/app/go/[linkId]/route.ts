@@ -42,7 +42,7 @@ export async function GET(
       const sig = await incrementClick(conn, relayer, linkId).catch(
         async (firstError: unknown) => {
           // One retry with ~1s backoff covers transient RPC 429s. Still
-          // best-effort: a double failure is logged, never fabricated —
+          // best-effort: a double failure is logged, never fabricated -
           // the UI only ever reads the confirmed on-chain count.
           console.warn(`[pitchlink] incrementClick ${linkId} failed, retrying once`, firstError);
           await new Promise((resolve) => setTimeout(resolve, 1000));

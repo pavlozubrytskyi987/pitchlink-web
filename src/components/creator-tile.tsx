@@ -191,7 +191,7 @@ function CreatorTileImpl({
           </div>
           <p className="mt-0.5 text-[17px] font-semibold leading-none tracking-normal text-[#b3b0aa] sm:text-[19px]">
             {live.onchainClicks == null
-              ? "—"
+              ? "-"
               : live.onchainClicks.toLocaleString("en-US")}
           </p>
         </div>
@@ -220,7 +220,7 @@ function CreatorTileImpl({
                   </>
                 ) : (
                   <span className="text-[15px] font-medium tracking-normal text-ash">
-                    {live.currentBidSol === null ? "—" : "No bids yet"}
+                    {live.currentBidSol === null ? "-" : "No bids yet"}
                   </span>
                 )}
               </p>

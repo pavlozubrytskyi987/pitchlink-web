@@ -58,7 +58,7 @@ export function BidTicker() {
   useEffect(() => setMounted(true), []);
   useEffect(() => subscribeFeed(setEntries), []);
 
-  // Slow re-tick of relative times (1 Hz) — cheap, keeps "Xs ago" accurate.
+  // Slow re-tick of relative times (1 Hz) - cheap, keeps "Xs ago" accurate.
   useEffect(() => {
     const id = window.setInterval(() => setNow(Math.floor(Date.now() / 1000)), 1000);
     return () => window.clearInterval(id);
@@ -95,7 +95,7 @@ export function BidTicker() {
         <div className="relative h-full min-w-0 flex-1 overflow-hidden border-l border-hairline">
           {empty ? (
             <p className="flex h-full items-center pl-5 text-[13px] text-ash">
-              Watching for new bids — each confirmed bid appears here with its Explorer link.
+              Watching for new bids. Each confirmed bid appears here with its Explorer link.
             </p>
           ) : (
             <>

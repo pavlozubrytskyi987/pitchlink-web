@@ -219,7 +219,7 @@ export function LiveBoard({ creators = CREATORS, live }: Props) {
             </h1>
             <p className="mt-5 max-w-[52ch] text-[16px] leading-[1.6] text-graphite sm:text-[17px]">
               Crypto creators auction video sponsorships. Brands bid SOL,
-              creators get paid on-chain — every transaction publicly inspectable.
+              creators get paid on-chain. Every transaction is publicly inspectable.
             </p>
             <div className="mt-7 flex flex-wrap items-center gap-3">
               <a

@@ -114,8 +114,8 @@ export function TryDemo({ campaign, counterPda, initialClicks }: Props) {
 
       <p className="mt-5 max-w-[60ch] text-[15px] leading-snug text-graphite">
         This campaign was claimed by the auction winner with a wallet-signed
-        setup. Its link redirects to the advertiser&rsquo;s site — shown
-        openly below — and every visit submits a real Solana transaction to a
+        setup. Its link redirects to the advertiser&rsquo;s site (shown
+        openly below), and every visit submits a real Solana transaction to a
         public counter. Try it: open the link, come back, watch the count.
       </p>
 
@@ -182,7 +182,7 @@ export function TryDemo({ campaign, counterPda, initialClicks }: Props) {
 
       <p className="mt-6 max-w-[60ch] text-[12.5px] leading-snug text-ash">
         Redirect records are counter updates on Solana devnet. They are not
-        unique-customer or revenue verification — that is the Conversion SDK
+        unique-customer or revenue verification. That is the Conversion SDK
         on the roadmap.
       </p>
     </div>

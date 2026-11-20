@@ -3,7 +3,7 @@
 // Live on-chain click count for one creator. Pulls the aggregated count from
 // /api/clicks/:creator (which sums every tracked link that credits the
 // creator), then subscribes to the on-chain `clickRecorded` event. Each event
-// whose `creator` matches bumps the local count immediately — no polling.
+// whose `creator` matches bumps the local count immediately - no polling.
 
 import { useConnection } from "@solana/wallet-adapter-react";
 import { useEffect, useState } from "react";

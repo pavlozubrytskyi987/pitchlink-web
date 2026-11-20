@@ -6,7 +6,7 @@ import { brandDisplayFor, useDynamicBrands } from "@/lib/use-brands";
 
 /**
  * Renders the post-settlement claim reveal over the auction page. The
- * winning brand's logo comes from the on-chain-bidder registry — never a
+ * winning brand's logo comes from the on-chain-bidder registry - never a
  * fabricated upload.
  */
 export function AuctionClaim() {

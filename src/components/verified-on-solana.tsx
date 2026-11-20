@@ -33,7 +33,7 @@ const LIFECYCLE = [
 
 /**
  * Real, previously confirmed devnet transactions from this deployed program.
- * Signatures only — if one were unavailable, the item would be omitted
+ * Signatures only - if one were unavailable, the item would be omitted
  * rather than faked.
  */
 const PROOFS: { title: string; body: string; signature: string }[] = [
@@ -60,7 +60,7 @@ const PROOFS: { title: string; body: string; signature: string }[] = [
 type LinkRow = { id: string; creator: string; clicks: number };
 
 /**
- * "Verified on Solana" — the transaction lifecycle plus the real, checkable
+ * "Verified on Solana" - the transaction lifecycle plus the real, checkable
  * addresses behind it. Every link opens devnet Explorer; nothing is mocked.
  */
 export function VerifiedOnSolana({
@@ -126,7 +126,7 @@ export function VerifiedOnSolana({
 
       <div className="mt-6">
         <p className="text-[12.5px] uppercase tracking-[0.12em] text-ash">
-          Proof — historical devnet transactions from this deployed program
+          Proof: historical devnet transactions from this deployed program
         </p>
         <div className="mt-3 grid gap-3 sm:grid-cols-3">
           {PROOFS.map((proof) => (
@@ -237,7 +237,7 @@ export function VerifiedOnSolana({
               {auctionAddress ? (
                 <EscrowLink auctionAddress={auctionAddress} />
               ) : (
-                <span className="text-ash">—</span>
+                <span className="text-ash">-</span>
               )}
             </DetailRow>
             <DetailRow label="ClickCounter PDA">
@@ -255,12 +255,12 @@ export function VerifiedOnSolana({
           </dl>
           <div className="mt-4 space-y-2 border-t border-hairline pt-4 text-[13px] leading-[1.6] text-graphite">
             <p>
-              <span className="font-medium text-ink">V1 — today:</span>{" "}
+              <span className="font-medium text-ink">V1 today:</span>{" "}
               the deployed Solana program enforces the current auction,
               escrow, refund, and settlement rules.
             </p>
             <p>
-              <span className="font-medium text-ink">V2 — planned:</span>{" "}
+              <span className="font-medium text-ink">V2 planned:</span>{" "}
               composable conversion verification using trusted advertiser
               program state. Not implemented yet.
             </p>

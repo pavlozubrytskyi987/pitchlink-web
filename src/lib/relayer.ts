@@ -2,10 +2,10 @@
 // of visitors. Loaded lazily and only in Node (server-only guarded).
 //
 // Key material comes from (in priority order):
-//   1. RELAYER_SECRET_KEY — base58 or JSON-array secret key. This is the
+//   1. RELAYER_SECRET_KEY - base58 or JSON-array secret key. This is the
 //      Vercel/serverless path: no filesystem involved, never exposed to the
 //      browser bundle (no NEXT_PUBLIC_ prefix).
-//   2. RELAYER_KEYPAIR — path to a local keypair JSON (dev only).
+//   2. RELAYER_KEYPAIR - path to a local keypair JSON (dev only).
 
 import "server-only";
 

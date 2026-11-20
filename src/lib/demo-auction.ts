@@ -3,7 +3,7 @@
 /**
  * Demo override: `?auction=<base58 PDA>` points the live surfaces (auction
  * panel, homepage card, history filter) at a specific auction account.
- * Read-only — it changes what the UI watches, never any on-chain state.
+ * Read-only - it changes what the UI watches, never any on-chain state.
  * Added for the recorded 3-minute demo while an earlier unsettled auction
  * still exists (findAuction would otherwise always prefer the later endTs).
  */

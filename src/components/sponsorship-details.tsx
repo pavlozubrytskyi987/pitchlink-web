@@ -4,7 +4,7 @@ const LABEL = "text-[12.5px] uppercase tracking-[0.12em] text-ash";
 
 /**
  * Left column of /auction: what is actually being sponsored. Only states
- * deliverables the platform really provides — the on-chain auction, the
+ * deliverables the platform really provides - the on-chain auction, the
  * tracked link, and the public record. Fulfillment of the video placement
  * itself is off-chain and said so plainly.
  */
@@ -44,15 +44,15 @@ export function SponsorshipDetails({ creator }: { creator: Creator }) {
         <ul className="mt-3 space-y-2 text-[14px] leading-[1.5] text-graphite">
           <Benefit>
             <span className="font-medium text-ink">Video sponsorship</span>
-            {" — "}placement in the next video.
+            {": "}placement in the next video.
           </Benefit>
           <Benefit>
             <span className="font-medium text-ink">Tracked advertiser link</span>
-            {" — "}on-chain redirect counter.
+            {": "}on-chain redirect counter.
           </Benefit>
           <Benefit>
             <span className="font-medium text-ink">Public auction records</span>
-            {" — "}verifiable on Solana Explorer.
+            {": "}verifiable on Solana Explorer.
           </Benefit>
         </ul>
       </div>

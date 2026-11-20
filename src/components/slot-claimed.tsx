@@ -230,7 +230,7 @@ export function SlotClaimed({
           ) : campaign && linkUrl ? (
             <>
               <p className="flex items-center gap-1.5 text-[13px] font-medium">
-                {campaign.brandName} — tracked link
+                {campaign.brandName}: tracked link
               </p>
               <div className="claim-link mt-2.5 flex items-center gap-2">
                 <a

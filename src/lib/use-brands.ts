@@ -1,7 +1,7 @@
 "use client";
 
 // Bidder identity lookup: static known-bidder registry (SABG fallback)
-// merged with the dynamic campaign registry (/api/campaigns) — brands that
+// merged with the dynamic campaign registry (/api/campaigns) - brands that
 // verified winners configured themselves with a signed challenge. Unknown
 // wallets render as plain addresses; we never invent branding.
 

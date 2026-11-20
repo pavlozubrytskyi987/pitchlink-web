@@ -110,7 +110,7 @@ export async function getBids(connection: Connection, auction: PublicKey): Promi
 
 /**
  * Every BidPlaced event the program ever emitted, newest first. Walks
- * recent program signatures and decodes BidPlaced logs — identical parser
+ * recent program signatures and decodes BidPlaced logs - identical parser
  * to getBids(), but keyed on the program id instead of one auction PDA.
  *
  * Fetches getTransaction in small sequential batches so the public devnet

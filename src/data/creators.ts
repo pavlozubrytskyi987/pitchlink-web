@@ -80,7 +80,7 @@ const SEEDS: Seed[] = [
     slug: "chef-dima",
     name: "Pavlo Zubrytskyi",
     handle: "@pavlozubrytsskyi",
-    niche: "Gaming + crypto — gameplay, clips, community",
+    niche: "Gaming + crypto: gameplay, clips, community",
     g: ["#6d28d9", "#0ea5e9"],
     avatarColor: "#6d28d9",
     initials: "PZ",

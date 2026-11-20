@@ -1,7 +1,7 @@
 // Durable app store: tracked links, winner campaign configs, spent auth
 // nonces. Serverless-safe: on Vercel it persists to Vercel Blob
 // (BLOB_READ_WRITE_TOKEN); in local dev it falls back to .pitchlink/store.json
-// (gitignored). One JSON document, read-modify-write — demo scale, not a
+// (gitignored). One JSON document, read-modify-write - demo scale, not a
 // high-concurrency design. Counts are NEVER stored here; the on-chain
 // ClickCounter PDA remains the only source of truth for redirect events.
 //
@@ -29,7 +29,7 @@ export interface CampaignRow {
   auction: string;
   /** Auction creator (base58) the link credits. */
   creator: string;
-  /** Winning advertiser wallet (base58) — verified on-chain at setup. */
+  /** Winning advertiser wallet (base58) - verified on-chain at setup. */
   wallet: string;
   brandName: string;
   destination: string;

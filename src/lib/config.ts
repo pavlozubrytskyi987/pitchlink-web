@@ -14,7 +14,7 @@ export const rpcIsQuickNode = Boolean(
  * RPC endpoint resolution.
  *
  * Server code (relayer, API routes, scripts) prefers SOLANA_RPC_URL, which is
- * never inlined into the browser bundle — a token-bearing endpoint stays
+ * never inlined into the browser bundle - a token-bearing endpoint stays
  * server-only. The browser falls back to NEXT_PUBLIC_QUICKNODE_DEVNET_URL,
  * which is public by design (restrict it in the QuickNode dashboard), then to
  * the rate-limited public devnet RPC.

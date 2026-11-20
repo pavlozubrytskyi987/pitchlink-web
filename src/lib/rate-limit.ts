@@ -1,5 +1,5 @@
 // Tiny in-memory fixed-window rate limiter for API routes. Per serverless
-// instance — not globally exact, but caps abuse per warm instance and keeps
+// instance - not globally exact, but caps abuse per warm instance and keeps
 // the relayer's devnet balance from being drained by a single client.
 
 import "server-only";

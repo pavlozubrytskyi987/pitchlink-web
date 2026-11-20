@@ -18,7 +18,7 @@ export function ConversionStat({ creator }: { creator: string | null }) {
           empty ? "text-[#c9c9c6]" : "text-ink"
         }`}
       >
-        {!creator ? "—" : clicks.toLocaleString("en-US")}
+        {!creator ? "-" : clicks.toLocaleString("en-US")}
       </p>
       <p className="mt-2 max-w-[48ch] text-[14px] leading-snug text-graphite">
         These records show counter updates on Solana. They don&rsquo;t

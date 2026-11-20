@@ -1,7 +1,7 @@
 "use client";
 
 // Creator performance, kept deliberately small: one card for recorded
-// redirects (per campaign, read from the on-chain ClickCounter PDAs — never
+// redirects (per campaign, read from the on-chain ClickCounter PDAs - never
 // summed across unrelated counters), one honest placeholder card for
 // verified conversions (Conversion SDK, not built), plus a compact campaign
 // activity list with Explorer links.
@@ -48,7 +48,7 @@ export function CreatorPerformance({
           fetchCampaigns(),
         ]);
         if (!alive) return;
-        // Per-link rows only — never invent a cross-campaign total for
+        // Per-link rows only - never invent a cross-campaign total for
         // unrelated PDAs. Deduplicate by link id if a key appears twice.
         const merged = new Map<string, LinkStat>();
         for (const row of clicksBodies.flat()) merged.set(row.id, row);
@@ -101,7 +101,7 @@ export function CreatorPerformance({
               loading || total === 0 ? "text-[#c9c9c6]" : "text-ink"
             }`}
           >
-            {loading ? "—" : total.toLocaleString("en-US")}
+            {loading ? "-" : total.toLocaleString("en-US")}
           </p>
           <p className="mt-1.5 text-[11.5px] leading-snug text-ash">
             Confirmed on-chain counter updates, this creator&rsquo;s campaigns.
@@ -110,7 +110,7 @@ export function CreatorPerformance({
         <div className="rounded-[12px] border border-dashed border-hairline-strong p-4">
           <p className="text-[12px] text-graphite">Verified conversions</p>
           <p className="mt-1.5 text-[15px] font-medium leading-snug text-ash">
-            Coming soon — Conversion SDK
+            Coming soon: Conversion SDK
           </p>
           <p className="mt-1.5 text-[11.5px] leading-snug text-ash">
             Qualifying on-chain actions (deposits, swaps) attributed to a
